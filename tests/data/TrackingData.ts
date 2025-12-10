@@ -1,0 +1,49 @@
+/**
+ * TrackingData interfaces for booking leg/job tracking operations
+ * Used in GROUP A-E test suites in booking-tracking.spec.ts
+ */
+
+export interface LegTimelineData {
+    planStart?: string;    // ISO string or time format "HH:mm"
+    start?: string;
+    startOut?: string;
+    planEnd?: string;
+    end?: string;
+    endOut?: string;
+}
+
+export interface LegAssignmentData {
+    driver?: string;       // Driver name (searchable text)
+    vehicle?: string;      // Vehicle identifier (searchable text)
+    transporter?: string;  // Company/Transporter name
+    assistants?: string;   // Assistant name(s)
+    remarks?: string;      // Leg remarks/notes
+}
+
+export interface LegData extends LegTimelineData, LegAssignmentData {
+    // Combined interface for complete leg update
+}
+
+export interface JobData {
+    jobType: string;           // e.g., "DOMESTIC"
+    measurementType: string;   // e.g., "Linear"
+    quantity: string;          // e.g., "km"
+    uom: string;              // e.g., "TRIP"
+    remarks?: string;
+}
+
+export interface TripData {
+    fromCompany: string;      // Source company
+    toCompany: string;        // Destination company
+    fromAddress?: string;     // Source address
+    toAddress?: string;       // Destination address
+    remarks?: string;
+}
+
+export interface BookingTrackingState {
+    bookingId: string;
+    jobId?: string;
+    tripId?: string;
+    legId?: string;
+    status?: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+}
