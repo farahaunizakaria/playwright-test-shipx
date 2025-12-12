@@ -8,6 +8,7 @@ import { BookingData } from "../data/BookingData";
 export class BookingPageCodegen {
     readonly page: Page;
 
+    //base page playwright ui elements and methods
     constructor(page: Page) {
         this.page = page;
     }
@@ -22,6 +23,8 @@ export class BookingPageCodegen {
         
         const result = await this.page.evaluate((optionText) => {
             // Find the visible dropdown (not hidden)
+            //issue #1: dropdown not visible, data unavailable
+            //issue #2: multiple dropdowns open, not selecting & not selecting the correct one
             const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
             
             if (!visibleDropdown) {
@@ -75,6 +78,12 @@ export class BookingPageCodegen {
         console.log('1️⃣ Clicking "New Booking"...');
         await this.page.getByRole('link', { name: 'plus New Booking' }).click();
         await this.page.waitForLoadState('domcontentloaded');
+        
+        // Close any open dropdowns or modals from previous tests
+        //issue #1: page not closed, test detects dropdown on main dashboard instead billing customer dropdown
+        //issue #2: elements intercepts pointer events
+        await this.page.keyboard.press('Escape'); // resets any ui elements before moving to another test
+        await this.page.waitForTimeout(300);
         
         // ========== STEP 1: BOOKING DETAILS ==========
         console.log('2️⃣ Step 1: Booking Details');
@@ -146,13 +155,13 @@ export class BookingPageCodegen {
         console.log('   - Job Type...');
         await this.page.locator('.ant-col.ant-form-item-control-wrapper.ant-col-xs-24 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
         await this.page.waitForTimeout(300);
-        await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).nth(2).click();
+        await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).nth(2).click(); //hardcoded to avoid selecting hidden dropdowns (another issue)
         
         // Measurement Type (click "None" first)
         console.log('   - Measurement Type...');
-        await this.page.getByText('None').click();
+        await this.page.getByText('None').click(); // Click "None" first to deselect
         await this.page.waitForTimeout(300);
-        await this.page.getByText(data.measurementType, { exact: true }).click();
+        await this.page.getByText(data.measurementType, { exact: true }).click(); // Then select desired type
         
         // Quantity
         console.log('   - Quantity...');
@@ -170,12 +179,14 @@ export class BookingPageCodegen {
         await this.page.locator('.ant-select.ant-select-outlined.ant-select-in-form-item > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
         await this.selectDropdownOption(data.fromCompany, 1500);
         await this.page.waitForTimeout(500); // Wait for dropdown to close
+        //issue: tak sempat select choice from dropdown -> no input detected
         
         // To Company
         console.log('   - To Company...');
         await this.page.locator('div:nth-child(2) > div > .ant-row > .ant-col.ant-col-18 > .ant-form-item-control-input > .ant-form-item-control-input-content > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
         await this.selectDropdownOption(data.toCompany, 1500);
         await this.page.waitForTimeout(500); // Wait for dropdown to close and form to update
+        //issue: same as above, unable to click "next" button
         
         console.log('✅ BOOKING FORM COMPLETED - Ready to add jobs/trips');
     }
@@ -194,7 +205,7 @@ export class BookingPageCodegen {
         if (isNextButtonVisible) {
             console.log('   - Navigating to confirmation page...');
             await nextButton.click();
-            await this.page.waitForTimeout(1000);
+            await this.page.waitForLoadState('domcontentloaded');
         } else {
             console.log('   - Already on confirmation page');
         }
@@ -206,33 +217,40 @@ export class BookingPageCodegen {
         // Submit
         console.log('   - Clicking Submit...');
         await this.page.getByRole('button', { name: 'Submit' }).click();
-        await this.page.waitForTimeout(2000);
         
-        // Wait for success
-        await this.page.waitForLoadState('domcontentloaded');
+        // Wait for success notification or page to settle after submission
+        // Use domcontentloaded instead of networkidle as some API calls may still be running
+        await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
+        await this.page.waitForTimeout(2000); // Allow time for URL to update and page to settle
         
         console.log('✅ Booking submitted successfully!');
     }
 
     /**
-     * Extract booking ID from the current URL
-     * Call this after creating a booking when the page has navigated to /bookings/{id}
-     * @returns The booking ID extracted from the URL
+     * FOR TRACKING OPERATIONS: TO TEST TO ANOTHER FLOW USING CREATED BOOKING ID
+     * Extract booking ID from the URL after submission
+     * @returns The booking ID extracted from the URL, or empty string if not found
      */
     async getBookingIdFromUrl(): Promise<string> {
-        const url = this.page.url();
-        const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1] || '';
+        // Wait for URL to update after submission redirect
+        await this.page.waitForTimeout(1000);
         
-        if (!bookingId) {
-            console.warn('⚠️ Could not extract booking ID from URL:', url);
-        } else {
-            console.log(`📋 Extracted booking ID: ${bookingId}`);
+        const url = this.page.url();
+        const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1];
+        
+        // Filter out 'new' as it's the creation page, not a real booking ID
+        if (bookingId && bookingId !== 'new') {
+            console.log(`📋 ✅ Extracted booking ID from URL: ${bookingId}`);
+            return bookingId;
         }
         
-        return bookingId;
+        // Extraction failed - log for debugging
+        console.warn('⚠️ Could not extract booking ID from URL:', url);
+        return '';
     }
 
     /**
+     * TEST #3:
      * Add a new trip to the current job
      * Automatically handles clicking the trip add button and selecting From/To companies
      * @param fromCompanyIndex Index of the company to select in the From dropdown (default: 0 = first option)

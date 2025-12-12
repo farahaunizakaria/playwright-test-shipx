@@ -7,6 +7,7 @@ import { LegData, JobData, TripData } from "../data/TrackingData";
 
 /**
  * BOOKING TRACKING & MANAGEMENT TEST SUITE
+ * (to track flows after submit booking and jobs)
  * 
  * Tests cover full CRUD operations on bookings:
  * - GROUP A: CREATE (add jobs, trips, legs)
