@@ -1,9 +1,9 @@
 import { test as base, expect } from "@playwright/test";
-import { test } from "./fixtures/fixtures";
-import { TrackingPageCodegen } from "./pages/TrackingPageCodegen";
-import { BookingPageCodegen } from "./pages/BookingPageCodegen";
-import { BookingData } from "./data/BookingData";
-import { LegData, JobData, TripData } from "./data/TrackingData";
+import { test } from "../fixtures/fixtures";
+import { TrackingPageCodegen } from "../pages/TrackingPageCodegen";
+import { BookingPageCodegen } from "../pages/BookingPageCodegen";
+import { BookingData } from "../data/BookingData";
+import { LegData, JobData, TripData } from "../data/TrackingData";
 
 /**
  * BOOKING TRACKING & MANAGEMENT TEST SUITE

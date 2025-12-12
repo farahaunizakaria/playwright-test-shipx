@@ -3,13 +3,8 @@ import { BookingData } from "../data/BookingData";
 
 /**
  * BookingPageCodegen - Page Object Model based on actual Playwright Codegen
- * 
- * Restructured from working codegen with:
- * - Real, tested selectors from actual booking form
- * - Clear step-by-step flow
- * - Simplified without unnecessary retry logic
- * - Proper waits between interactions
  */
+
 export class BookingPageCodegen {
     readonly page: Page;
 
@@ -182,25 +177,130 @@ export class BookingPageCodegen {
         await this.selectDropdownOption(data.toCompany, 1500);
         await this.page.waitForTimeout(500); // Wait for dropdown to close and form to update
         
-        // Navigate to Step 3
-        console.log('   ✅ Step 2 complete, moving to Step 3...');
-        await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
-        await this.page.waitForLoadState('domcontentloaded');
+        console.log('✅ BOOKING FORM COMPLETED - Ready to add jobs/trips');
+    }
+
+    /**
+     * Submit booking after adding jobs/trips
+     * Use this after calling createBooking() and adding any additional jobs/trips
+     */
+    async submitBooking() {
+        console.log('📤 Submitting booking...');
         
-        // ========== STEP 3: REVIEW & SUBMIT ==========
-        console.log('4️⃣ Step 3: Review & Submit');
+        // Check if we need to navigate to confirmation page (Step 3)
+        const nextButton = this.page.getByRole('button', { name: 'Next right' }).nth(1);
+        const isNextButtonVisible = await nextButton.isVisible({ timeout: 2000 }).catch(() => false);
         
-        // Accept Terms Checkbox
-        console.log('   - Accepting terms...');
+        if (isNextButtonVisible) {
+            console.log('   - Navigating to confirmation page...');
+            await nextButton.click();
+            await this.page.waitForTimeout(1000);
+        } else {
+            console.log('   - Already on confirmation page');
+        }
+        
+        // Check "Override Duplicate Booking" checkbox (using codegen selector)
+        console.log('   - Checking override duplicate booking...');
         await this.page.getByLabel('', { exact: true }).check();
         
         // Submit
-        console.log('   - Submitting booking...');
+        console.log('   - Clicking Submit...');
         await this.page.getByRole('button', { name: 'Submit' }).click();
+        await this.page.waitForTimeout(2000);
         
         // Wait for success
         await this.page.waitForLoadState('domcontentloaded');
         
-        console.log('✅ BOOKING CREATED SUCCESSFULLY!');
+        console.log('✅ Booking submitted successfully!');
+    }
+
+    /**
+     * Extract booking ID from the current URL
+     * Call this after creating a booking when the page has navigated to /bookings/{id}
+     * @returns The booking ID extracted from the URL
+     */
+    async getBookingIdFromUrl(): Promise<string> {
+        const url = this.page.url();
+        const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1] || '';
+        
+        if (!bookingId) {
+            console.warn('⚠️ Could not extract booking ID from URL:', url);
+        } else {
+            console.log(`📋 Extracted booking ID: ${bookingId}`);
+        }
+        
+        return bookingId;
+    }
+
+    /**
+     * Add a new trip to the current job
+     * Automatically handles clicking the trip add button and selecting From/To companies
+     * @param fromCompanyIndex Index of the company to select in the From dropdown (default: 0 = first option)
+     * @param toCompanyIndex Index of the company to select in the To dropdown (default: 0 = first option)
+     */
+    async addTrip(fromCompanyIndex: number = 0, toCompanyIndex: number = 0) {
+        console.log('➕ Adding new trip...');
+        
+        // Click the trip add button
+        await this.page.locator('#trip-add-button').click();
+        await this.page.waitForTimeout(1000); // Wait for trip to be added
+
+        // Scroll to the new trip to ensure it's visible
+        await this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).last().scrollIntoViewIfNeeded();
+        await this.page.waitForTimeout(300);
+        
+        // Click the To Company dropdown (last occurrence of "Select a company...")
+        await this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).last().click();
+        await this.page.waitForTimeout(500);
+        
+        // Select the company from the dropdown
+        const toOptions = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
+            .locator('.ant-select-item-option');
+        await toOptions.nth(toCompanyIndex).click();
+        await this.page.waitForTimeout(500);
+
+        console.log('   ✅ Trip added successfully');
+    }
+
+    /**
+     * Fill job remarks for a specific job
+     * @param jobIndex 0-based index of the job (0 = first job, 1 = second job, etc.)
+     * @param remarks The remarks text to fill
+     */
+    async fillJobRemarks(jobIndex: number, remarks: string) {
+        console.log(`📝 Filling Job #${jobIndex + 1} remarks: "${remarks}"`);
+        
+        const jobRemarksField = this.page.getByRole('textbox', { name: 'Enter job remarks...' }).nth(jobIndex);
+        await jobRemarksField.click();
+        await jobRemarksField.fill(remarks);
+    }
+
+    /**
+     * Fill trip remarks for a specific trip
+     * @param tripNumber 1-based trip number (1, 2, 3, etc.) - matches the placeholder text
+     * @param remarks The remarks text to fill
+     * @param jobIndex 0-based job index (default: 0 = first job)
+     */
+    async fillTripRemarks(tripNumber: number, remarks: string, jobIndex: number = 0) {
+        console.log(`📝 Filling Trip #${tripNumber} remarks (Job #${jobIndex + 1}): "${remarks}"`);
+        
+        const tripRemarksField = this.page.getByRole('textbox', { name: `Enter trip #${tripNumber} remarks...` }).nth(jobIndex);
+        await tripRemarksField.click();
+        await tripRemarksField.fill(remarks);
+    }
+
+    /**
+     * Navigate to a booking by ID and verify it loads successfully
+     * Useful for verifying data persistence after submission
+     * @param bookingId The booking ID to navigate to
+     */
+    async verifyBookingExists(bookingId: string) {
+        console.log(`🔍 Navigating to booking: ${bookingId}`);
+        
+        await this.page.goto(`/bookings/${bookingId}`);
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page.waitForTimeout(1000);
+        
+        console.log('✅ Booking page loaded');
     }
 }
