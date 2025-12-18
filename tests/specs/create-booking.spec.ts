@@ -1,13 +1,14 @@
 import { test, expect } from '../fixtures/fixtures';
 import { BookingPageCodegen } from '../pages/BookingPageCodegen';
 import { BookingData } from '../data/BookingData';
+import { writeFileSync } from 'fs'; //automate booking ID from created booking to update leg test using .txt file
 
 /*
  * Test Suite: Booking Functionality using Codegen-based Page Object
  * to track new booking with added jobs and trips
  */
 
-test.describe('Booking Tests - Codegen Implementation', () => {
+test.describe('Create Booking', () => {
 
   test('should create a new booking with static data', async ({ authenticatedPage }) => {
     const bookingPage = new BookingPageCodegen(authenticatedPage);
@@ -77,9 +78,11 @@ test.describe('Booking Tests - Codegen Implementation', () => {
     // Extract booking ID (already redirected to booking page)
     //To verify the booking was created (not "new")
     //booking id not been used in Test#3
-    const bookingId = await bookingPage.getBookingIdFromUrl(); 
+    const bookingId = await bookingPage.getBookingIdFromUrl();
+    writeFileSync('latest-booking-id.txt', bookingId, 'utf-8'); 
     
     console.log(`✅ Dynamic booking submitted with ref: ${bookingData.shipperRef}, ID: ${bookingId}`);
+    console.log(`🔗 Booking URL: /bookings/${bookingId}`); 
     
     // purpose: test full booking creation and submission flow with dynamic data
   });

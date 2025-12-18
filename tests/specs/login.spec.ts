@@ -6,7 +6,7 @@ import { test, expect } from '../fixtures/fixtures';
  * Test cases for user authentication and login flow
  */
 
-test.describe('Login Tests', () => {
+test.describe('Login ', () => {
   
   test('should login successfully with valid credentials', async ({ loginPage, page }) => {
     // Navigate to login page

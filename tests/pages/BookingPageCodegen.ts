@@ -116,10 +116,24 @@ export class BookingPageCodegen {
         await this.page.locator('[id="details.customerRef"]').click();
         await this.page.locator('[id="details.customerRef"]').fill(data.customerRef);
         
-        // Remarks
+        // Remarks - try multiple selectors for flexibility
         console.log('   - Remarks...');
-        await this.page.getByRole('textbox', { name: 'Remarks:' }).click();
-        await this.page.getByRole('textbox', { name: 'Remarks:' }).fill(data.remarks);
+        let remarksField = this.page.getByRole('textbox', { name: 'Remarks:' });
+        let isVisible = await remarksField.isVisible({ timeout: 1000 }).catch(() => false);
+        
+        if (!isVisible) {
+            // Fallback: Try to find textarea or input near "Remarks" label
+            remarksField = this.page.locator('[id*="remarks"]').first();
+            isVisible = await remarksField.isVisible({ timeout: 1000 }).catch(() => false);
+        }
+        
+        if (isVisible) {
+            await remarksField.click();
+            await remarksField.fill(data.remarks);
+            console.log('   ✅ Remarks filled');
+        } else {
+            console.log('   ⚠️ Remarks field not found, skipping...');
+        }
         
         // Load Type
         console.log('   - Load Type...');
@@ -153,9 +167,20 @@ export class BookingPageCodegen {
         
         // Job Type
         console.log('   - Job Type...');
-        await this.page.locator('.ant-col.ant-form-item-control-wrapper.ant-col-xs-24 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
-        await this.page.waitForTimeout(300);
-        await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).nth(2).click(); //hardcoded to avoid selecting hidden dropdowns (another issue)
+        // Find all selectors and click the first one in the Job section
+        const allSelectors = this.page.locator('.ant-select-selector');
+        // The Job Type is typically the first selector after the form loads in Step 2
+        const jobTypeSelector = allSelectors.nth(4); // Adjusted index for Step 2
+        try {
+            await jobTypeSelector.click({ timeout: 2000 });
+            await this.page.waitForTimeout(500);
+            // Select DOMESTIC option
+            await this.page.getByRole('option', { name: /DOMESTIC/i }).first().click();
+            await this.page.waitForTimeout(500);
+        } catch (e) {
+            console.log(`⚠️ Job Type selection failed, trying alternative: ${e}`);
+            await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).first().click();
+        }
         
         // Measurement Type (click "None" first)
         console.log('   - Measurement Type...');

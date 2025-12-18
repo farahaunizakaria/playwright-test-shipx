@@ -4,12 +4,12 @@
  */
 
 export interface LegTimelineData {
-    planStart?: string;    // ISO string or time format "HH:mm"
-    start?: string;
-    startOut?: string;
-    planEnd?: string;
-    end?: string;
-    endOut?: string;
+    planStart?: string | boolean;    // ISO string or time format "HH:mm", or true to use current time
+    start?: string | boolean;
+    startOut?: string | boolean;
+    planEnd?: string | boolean;
+    end?: string | boolean;
+    endOut?: string | boolean;
 }
 
 export interface LegAssignmentData {
