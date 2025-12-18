@@ -126,27 +126,27 @@ export class InvoicePage {
      * Submit the invoice (Create and Submit)
      */
     async submitInvoice() {
-        console.log('📤 Submitting invoice...');
+        console.log('Submitting invoice...');
 
         // Wait for form to be ready
         await this.page.waitForTimeout(1500);
 
         // Click the charge item anchor/button to confirm selection
-        console.log('   - Confirming charge item selection...');
+        console.log('Confirming charge item selection...');
         try {
             const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
             const isVisible = await chargeItemAnchor.isVisible({ timeout: 2000 }).catch(() => false);
             if (isVisible) {
                 await chargeItemAnchor.click();
                 await this.page.waitForTimeout(800);
-                console.log('   Charge item anchor clicked');
+                console.log('Charge item anchor clicked');
             }
         } catch (e) {
             console.log(`Charge item anchor not found: ${e}`);
         }
 
         // Click "Create and Submit" button
-        console.log('   - Clicking "Create and Submit"...');
+        console.log('Clicking "Create and Submit"...');
         await this.page.waitForTimeout(1000); // Extra wait to ensure form is ready
         
         const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
@@ -164,5 +164,161 @@ export class InvoicePage {
     async createAndSubmitInvoice(data: InvoiceData) {
         await this.createCustomerInvoice(data);
         await this.submitInvoice();
+    }
+
+    /**
+     * Approve a customer invoice
+     */
+    async approveCustomerInvoice() {
+        console.log('Approving customer invoice...');
+        
+        // Click the approval button (exclamation-circle Customer button)
+        const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Customer/ });
+        await approvalButton.waitFor({ state: 'visible', timeout: 3000 });
+        await approvalButton.click();
+        await this.page.waitForTimeout(800);
+        console.log('Approval button clicked');
+
+        // Click the "Approve" button
+        const approveBtn = this.page.getByRole('button', { name: 'Approve' });
+        await approveBtn.waitFor({ state: 'visible', timeout: 3000 });
+        await approveBtn.click();
+        
+        // Wait for approval success message to appear
+        await this.page.waitForSelector('text=has been approved', { timeout: 5000 }).catch(() => null);
+        await this.page.waitForTimeout(1000); // Additional buffer
+        console.log('Customer invoice approved');
+    }
+
+    /**
+     * Capture the invoice number from the approved customer invoice
+     * @returns The invoice number
+     */
+    async captureInvoiceNumber(): Promise<string> {
+        console.log('Capturing invoice number...');
+        
+        // Wait for invoice number to appear in the list
+        await this.page.waitForTimeout(1500);
+        
+        // The invoice number appears in a div with format like _INV25120006
+        const invoiceNumberElement = this.page.locator('div').filter({ hasText: /^_INV\d{8}$/ }).first();
+        await invoiceNumberElement.waitFor({ state: 'visible', timeout: 3000 });
+        
+        const invoiceNumber = await invoiceNumberElement.textContent();
+        console.log(`Invoice number captured: ${invoiceNumber}`);
+        
+        return invoiceNumber || '';
+    }
+
+    /**
+     * Create a supplier payment for an approved customer invoice
+     * @param invoiceNumber The invoice number from customer invoice
+     * @param supplierData Supplier payment data
+     */
+    async createSupplierPayment(invoiceNumber: string, supplierData: InvoiceData) {
+        console.log(`💸 Starting supplier payment creation for invoice: ${invoiceNumber}...`);
+
+        // Step 1: Click voucher types button
+        console.log('Opening voucher types menu...');
+        await this.page.locator('#voucher-types-button').click();
+        await this.page.waitForTimeout(1000);
+
+        // Step 2: Select Supplier Payment
+        console.log('Selecting "Supplier Payment"...');
+        await this.page.getByRole('button', { name: 'file Supplier Payment' }).click();
+        await this.page.waitForTimeout(1500); // Wait for page transition
+
+        // Step 3: Fill Invoice Number
+        console.log(`Filling invoice number: ${invoiceNumber}...`);
+        const invoiceNumberField = this.page.getByRole('textbox', { name: '* Invoice No.' });
+        await invoiceNumberField.waitFor({ state: 'visible', timeout: 3000 });
+        await invoiceNumberField.click();
+        await invoiceNumberField.fill(invoiceNumber);
+        await this.page.waitForTimeout(800);
+        console.log('Invoice number filled');
+
+        // Step 4: Select company
+        console.log('Selecting company...');
+        const companyDropdown = this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).nth(4);
+        await companyDropdown.waitFor({ state: 'visible', timeout: 3000 });
+        await companyDropdown.click();
+        await this.page.waitForTimeout(800);
+
+        // Select first company option
+        const companyOption = this.page.locator('.ant-select-item').first();
+        await companyOption.waitFor({ state: 'visible', timeout: 3000 });
+        await companyOption.click();
+        await this.page.waitForTimeout(1000);
+        console.log('Company selected');
+
+        // Step 5: Select template
+        console.log(`Selecting template: ${supplierData.template}...`);
+        const templateDropdown = this.page.locator('div').filter({ hasText: /^Select a template\.\.\.$/ }).nth(4);
+        await templateDropdown.waitFor({ state: 'visible', timeout: 3000 });
+        await templateDropdown.click();
+        await this.page.waitForTimeout(800);
+        
+        // Click the specific template
+        const template = this.page.locator(`[title="${supplierData.template}"]`).first();
+        await template.waitFor({ state: 'visible', timeout: 3000 });
+        await template.click();
+        await this.page.waitForTimeout(1500); // Wait for template to load
+        console.log(`Template "${supplierData.template}" selected`);
+    }
+
+    /**
+     * Submit the supplier payment
+     */
+    async submitSupplierPayment() {
+        console.log('Submitting supplier payment...');
+
+        // Wait for form to be ready
+        await this.page.waitForTimeout(1500);
+
+        // Click the charge item anchor to confirm selection
+        console.log('Confirming charge item selection...');
+        try {
+            const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
+            const isVisible = await chargeItemAnchor.isVisible({ timeout: 2000 }).catch(() => false);
+            if (isVisible) {
+                await chargeItemAnchor.click();
+                await this.page.waitForTimeout(800);
+                console.log('Charge item anchor clicked');
+            }
+        } catch (e) {
+            console.log(`Charge item anchor not found: ${e}`);
+        }
+
+        // Click "Create and Submit" button
+        console.log('Clicking "Create and Submit"...');
+        await this.page.waitForTimeout(1000);
+        
+        const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
+        await submitButton.waitFor({ state: 'visible', timeout: 3000 });
+        await submitButton.click();
+        await this.page.waitForTimeout(3000); // Wait for submission to complete
+
+        console.log('Supplier payment submitted successfully!');
+    }
+
+    /**
+     * Approve a supplier payment
+     */
+    async approveSupplierPayment() {
+        console.log('Approving supplier payment...');
+        
+        // Click the approval button (exclamation-circle Trans button)
+        const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Trans/ });
+        await approvalButton.waitFor({ state: 'visible', timeout: 3000 });
+        await approvalButton.click();
+        await this.page.waitForTimeout(800);
+        console.log('Approval button clicked');
+
+        // Click the "Approve" button
+        const approveBtn = this.page.getByRole('button', { name: 'Approve' });
+        await approveBtn.waitFor({ state: 'visible', timeout: 3000 });
+        await approveBtn.click();
+        await this.page.waitForTimeout(2000); // Wait for approval to complete
+        console.log('Supplier payment approved');
     }
 }
