@@ -1,11 +1,6 @@
 import { test, expect } from '../fixtures/fixtures';
 
-/**
- * Test Suite: Login/Authentication Functionality
- * 
- * Test cases for user authentication and login flow
- */
-
+//TEST 1: LOGIN AUTH
 test.describe('Login ', () => {
   
   test('should login successfully with valid credentials', async ({ loginPage, page }) => {
@@ -24,13 +19,6 @@ test.describe('Login ', () => {
     // Add additional verification for successful login
     // Example: Check for user profile, dashboard elements, etc.
   });
-
-//   test('should display login form elements', async ({ loginPage, page }) => {
-//     await loginPage.navigateToLogin();
-
-//     // Verify proceed button is visible
-//     await expect(page.getByRole('button', { name: 'Proceed' })).toBeVisible();
-//   });
 
   test('should complete login flow step by step', async ({ loginPage, page }) => {
     await loginPage.navigateToLogin();

@@ -3,6 +3,7 @@ import { TrackingPageCodegen } from '../pages/TrackingPageCodegen';
 import { LegData } from '../data/TrackingData';
 import { readFileSync } from 'fs'
 
+//TEST 3: TEST UPDATE LEGS AND TRIPS
 test.describe('Update Leg', () => {
     
     const BOOKING_ID = readFileSync('latest-booking-id.txt', 'utf-8').trim();
@@ -74,26 +75,26 @@ test.describe('Update Leg', () => {
         console.log('Step 7: Assigning driver and vehicle...');
         await trackingPage.assignLegResources(legTestData);
         
-        // Step 8: FIRST SUBMIT - Submit driver and vehicle assignment
-        console.log('Step 8: Submitting driver and vehicle (first submit button)...');
-        await trackingPage.submitLegDriverVehicle();
-        await authenticatedPage.waitForTimeout(1500); // Wait for driver/vehicle to save
+        // Step 8: Submit driver and vehicle assignment
+        console.log('Step 8: Submitting driver and vehicle...');
+        await trackingPage.submitLeg();
         
-        // Step 9: Update all timeline fields (modal still open after first submit)
-        console.log('Step 9: Updating timeline fields with real-time data...');
+        // Step 9: Wait for submission to complete
+        console.log('Step 9: Waiting for submission to complete...');
+        await authenticatedPage.waitForTimeout(2000); // Wait for success status
+        
+        // Step 10: Update all timeline fields (modal still open)
+        console.log('Step 10: Updating timeline fields with real-time data...');
         await authenticatedPage.waitForTimeout(1000); // Additional timeout before updating timeline
         await trackingPage.updateLegTimelineInteractive(legTestData);
         
-        // Step 10: Wait for timeline updates to complete
-        console.log('Step 10: Waiting for timeline updates...');
+        // Step 11: Wait for timeline updates to complete
+        console.log('Step 11: Waiting for timeline updates...');
         await authenticatedPage.waitForTimeout(2000); // Wait for updates to process
         
-        // Step 11: FINAL SUBMIT - Submit everything (top-right button)
-        console.log('Step 11: Final submit (top-right button)...');
-        await trackingPage.submitLegFinal();
-        
-        // Step 12: Close the modal
-        console.log('Step 12: Closing leg dialog...');
+        // Step 12: Final submit and close
+        console.log('Step 12: Final submit and close...');
+        await trackingPage.submitLeg();
         await trackingPage.closeLegDialog();
         
         console.log('✅ Leg updated successfully with driver, vehicle, and all timeline fields!');

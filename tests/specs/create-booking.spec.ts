@@ -3,11 +3,7 @@ import { BookingPageCodegen } from '../pages/BookingPageCodegen';
 import { BookingData } from '../data/BookingData';
 import { writeFileSync } from 'fs'; //automate booking ID from created booking to update leg test using .txt file
 
-/*
- * Test Suite: Booking Functionality using Codegen-based Page Object
- * to track new booking with added jobs and trips
- */
-
+//TEST 2: CREATE JOB BOOKING
 test.describe('Create Booking', () => {
 
   test('should create a new booking with static data', async ({ authenticatedPage }) => {
