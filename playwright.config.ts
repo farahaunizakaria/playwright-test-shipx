@@ -35,8 +35,8 @@ export default defineConfig({
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: "on-first-retry",
     
-    /* Show browser window during tests - fixes white screen in UI mode */
-    headless: false,
+    /* Headless mode: true for CI, false for local development */
+    headless: process.env.CI ? true : false,
     
     /* Take screenshot on failure */
     screenshot: "only-on-failure",
