@@ -21,6 +21,10 @@ jobs:
       run: npx playwright test
       env:
         CI: true
+        BASE_URL: ${{ secrets.BASE_URL }}
+        BOT_EMAIL: ${{ secrets.BOT_EMAIL }}
+        BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
+        BASE_COMPANY: ${{ secrets.BASE_COMPANY }}
     - uses: actions/upload-artifact@v4
       if: ${{ !cancelled() }}
       with:
