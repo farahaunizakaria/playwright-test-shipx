@@ -17,6 +17,13 @@ jobs:
       run: npm ci
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps
+    - name: Debug environment variables
+      run: |
+        echo "BASE_URL is: $BASE_URL"
+        echo "CI is: $CI"
+      env:
+        CI: true
+        BASE_URL: ${{ secrets.BASE_URL }}
     - name: Run Playwright tests
       run: npx playwright test
       env:
