@@ -259,164 +259,45 @@ export class TrackingPageCodegen {
      * @param timelineData LegData containing time fields (planStart, start, startOut, end, endOut, planEnd)
      */
     async updateLegTimelineInteractive(timelineData: LegData) {
-        console.log('⏰ Updating timeline interactively with real-time values...');
-        
-        // Get the INNERMOST modal (Update Leg modal, not Trip modal) - use .last()
         const modal = this.page.locator('.ant-modal-wrap .ant-modal-content').last();
         
-        // Helper to click edit and submit buttons for time fields with retry mechanism
-        const updateTimeField = async (fieldName: string, maxRetries: number = 2) => {
+        const updateTimeField = async (fieldName: string) => {
             const editButton = modal.locator(`#edit-time-button-${fieldName}`);
             const submitButton = modal.locator(`#submit-time-button-${fieldName}`);
             
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                try {
-                    // First check if modal is still open before each attempt
-                    const modalOpen = await modal.isVisible({ timeout: 2000 }).catch(() => false);
-                    if (!modalOpen) {
-                        console.log(`    ❌ Modal closed before updating ${fieldName}, stopping...`);
-                        return;
-                    }
-                    
-                    console.log(`  ⏱️ Updating ${fieldName}... (Attempt ${attempt}/${maxRetries})`);
-                    
-                    // Check if submit button is already visible (field already in edit mode)
-                    const submitAlreadyVisible = await submitButton.isVisible({ timeout: 500 }).catch(() => false);
-                    
-                    if (submitAlreadyVisible) {
-                        console.log(`    ℹ️ ${fieldName} already in edit mode, clicking submit directly...`);
-                        await submitButton.click({ force: true });
-                        await this.page.waitForTimeout(1500);
-                        
-                        // Check if edit button reappears (meaning data was saved and field exited edit mode)
-                        const editReappeared = await editButton.isVisible({ timeout: 2000 }).catch(() => false);
-                        if (editReappeared) {
-                            console.log(`    ✅ ${fieldName} updated successfully (edit button reappeared)`);
-                            return; // Success!
-                        } else {
-                            console.log(`    ⚠️ ${fieldName} submit clicked but edit button didn't reappear, retrying...`);
-                            continue; // Retry
-                        }
-                    }
-                    
-                    // Scroll the field into view first
-                    await editButton.scrollIntoViewIfNeeded().catch(() => {});
-                    await this.page.waitForTimeout(500);
-                    
-                    // Check if edit button is visible
-                    const isVisible = await editButton.isVisible({ timeout: 2000 }).catch(() => false);
-                    if (!isVisible) {
-                        console.log(`    ⚠️ ${fieldName} edit button not visible in modal after scroll`);
-                        if (attempt < maxRetries) {
-                            console.log(`    🔄 Retrying ${fieldName}...`);
-                            await this.page.waitForTimeout(1000);
-                            continue;
-                        }
-                        return;
-                    }
-                    
-                    console.log(`    📝 Clicking edit button for ${fieldName} (3 times)...`);
-                    await editButton.click({ force: true, timeout: 10000 });
-                    await this.page.waitForTimeout(300);
-                    await editButton.click({ force: true, timeout: 10000 });
-                    await this.page.waitForTimeout(300);
-                    await editButton.click({ force: true, timeout: 10000 });
-                    await this.page.waitForTimeout(1500); // Wait for date/time pickers to appear
-                    
-                    // Wait for submit button to appear
-                    console.log(`    💾 Waiting for submit button for ${fieldName}...`);
-                    const submitVisible = await submitButton.isVisible({ timeout: 2000 }).catch(() => false);
-                    
-                    if (!submitVisible) {
-                        console.log(`    ❌ ${fieldName} submit button did NOT appear after clicking edit`);
-                        if (attempt < maxRetries) {
-                            console.log(`    🔄 Retrying ${fieldName}...`);
-                            await this.page.waitForTimeout(1000);
-                            continue;
-                        }
-                        return;
-                    }
-                    
-                    // Scroll submit button into view
-                    await submitButton.scrollIntoViewIfNeeded().catch(() => {});
-                    await this.page.waitForTimeout(300);
-                    
-                    console.log(`    💾 Clicking submit button for ${fieldName}...`);
-                    await submitButton.click({ force: true, timeout: 10000 });
-                    await this.page.waitForTimeout(1500); // Wait for mutation to complete
-                    
-                    // Check if modal is still open
-                    const modalStillOpen = await modal.isVisible({ timeout: 1000 }).catch(() => false);
-                    if (!modalStillOpen) {
-                        console.log(`    ⚠️ Modal closed after ${fieldName} submit - stopping updates`);
-                        return;
-                    }
-                    
-                    // Verify data was saved by checking if edit button reappears
-                    const editReappeared = await editButton.isVisible({ timeout: 2000 }).catch(() => false);
-                    if (editReappeared) {
-                        console.log(`    ✅ ${fieldName} updated successfully (edit button reappeared)`);
-                        return; // Success!
-                    } else {
-                        console.log(`    ⚠️ ${fieldName} submit clicked but edit button didn't reappear`);
-                        if (attempt < maxRetries) {
-                            console.log(`    🔄 Retrying ${fieldName}...`);
-                            await this.page.waitForTimeout(1000);
-                            continue; // Retry
-                        }
-                    }
-                    
-                } catch (error) {
-                    const errorMessage = error instanceof Error ? error.message : String(error);
-                    console.log(`    ⚠️ ${fieldName} field update error on attempt ${attempt}: ${errorMessage}`);
-                    if (attempt < maxRetries) {
-                        console.log(`    🔄 Retrying ${fieldName}...`);
-                        await this.page.waitForTimeout(1000);
-                        continue;
-                    }
-                }
+            // Check if submit button already visible (field in edit mode)
+            const submitVisible = await submitButton.isVisible({ timeout: 500 }).catch(() => false);
+            
+            if (submitVisible) {
+                await submitButton.click({ force: true });
+                await this.page.waitForTimeout(1000);
+                return;
             }
             
-            console.log(`    ❌ ${fieldName} failed after ${maxRetries} attempts`);
+            // Click edit button to enter edit mode
+            await editButton.scrollIntoViewIfNeeded().catch(() => {});
+            await editButton.click({ force: true });
+            await this.page.waitForTimeout(200);
+            await editButton.click({ force: true });
+            await this.page.waitForTimeout(200);
+            await editButton.click({ force: true });
+            await this.page.waitForTimeout(1000);
+            
+            // Click submit
+            await submitButton.scrollIntoViewIfNeeded().catch(() => {});
+            await submitButton.click({ force: true });
+            await this.page.waitForTimeout(1000);
         };
 
-        // Update timeline fields if they're marked as true in timelineData
-        // Process them sequentially with proper waits in logical timeline order
-        if (timelineData.planStart) {
-            await updateTimeField('planStart');
-            await this.page.waitForTimeout(2500); // Wait between fields
-        }
+        // Update fields in timeline order
+        if (timelineData.planStart) await updateTimeField('planStart');
+        if (timelineData.start) await updateTimeField('start');
+        if (timelineData.startOut) await updateTimeField('startOut');
+        if (timelineData.planEnd) await updateTimeField('planEnd');
+        if (timelineData.end) await updateTimeField('end');
+        if (timelineData.endOut) await updateTimeField('endOut');
         
-        if (timelineData.start) {
-            await updateTimeField('start');
-            await this.page.waitForTimeout(1000);
-        }
-        
-        if (timelineData.startOut) {
-            await updateTimeField('startOut');
-            await this.page.waitForTimeout(1000);
-        }
-        
-        if (timelineData.planEnd) {
-            await updateTimeField('planEnd');
-            await this.page.waitForTimeout(1000);
-        }
-        
-        if (timelineData.end) {
-            await updateTimeField('end');
-            await this.page.waitForTimeout(1000);
-        }
-        
-        if (timelineData.endOut) {
-            await updateTimeField('endOut');
-            await this.page.waitForTimeout(1000);
-        }
-
-        // Final wait to ensure all GraphQL mutations complete before closing modal
-        console.log('⏳ Waiting for all mutations to complete...');
-        await this.page.waitForTimeout(2000);
-        
-        console.log('✅ All timeline fields updated successfully with real-time values');
+        await this.page.waitForTimeout(1000);
     }
 
     /**
