@@ -161,32 +161,28 @@ export class BookingPageCodegen {
         console.log('   ✅ Step 1 complete, moving to Step 2...');
         await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
         await this.page.waitForLoadState('domcontentloaded');
+        await this.page.waitForTimeout(2000); // Wait for Step 2 to render
         
         // ========== STEP 2: JOB DETAILS ==========
         console.log('3️⃣ Step 2: Job Details');
         
-        // Job Type
+        // Job Type - Wait for it to be actually visible before clicking
         console.log('   - Job Type...');
-        // Find all selectors and click the first one in the Job section
-        const allSelectors = this.page.locator('.ant-select-selector');
-        // The Job Type is typically the first selector after the form loads in Step 2
-        const jobTypeSelector = allSelectors.nth(4); // Adjusted index for Step 2
-        try {
-            await jobTypeSelector.click({ timeout: 2000 });
-            await this.page.waitForTimeout(500);
-            // Select DOMESTIC option
-            await this.page.getByRole('option', { name: /DOMESTIC/i }).first().click();
-            await this.page.waitForTimeout(500);
-        } catch (e) {
-            console.log(`⚠️ Job Type selection failed, trying alternative: ${e}`);
-            await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).first().click();
-        }
+        const jobTypeField = this.page.locator('div').filter({ hasText: /^Select job type\.\.\.$/ }).nth(3);
+        await jobTypeField.waitFor({ state: 'visible', timeout: 10000 });
+        await jobTypeField.click();
+        await this.page.waitForTimeout(500);
+        
+        // Select DOMESTIC option from the dropdown
+        await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).nth(1).click();
+        await this.page.waitForTimeout(500);
+        console.log('   ✅ Job Type: DOMESTIC selected');
         
         // Measurement Type (click "None" first)
         console.log('   - Measurement Type...');
-        await this.page.getByText('None').click(); // Click "None" first to deselect
+        await this.page.locator('div').filter({ hasText: /^None$/ }).nth(3).click(); // Click "None" first to deselect
         await this.page.waitForTimeout(300);
-        await this.page.getByText(data.measurementType, { exact: true }).click(); // Then select desired type
+        await this.page.getByTitle(data.measurementType).click(); // Then select desired type
         
         // Quantity
         console.log('   - Quantity...');
@@ -203,17 +199,19 @@ export class BookingPageCodegen {
         console.log('   - From Company...');
         await this.page.locator('.ant-select.ant-select-outlined.ant-select-in-form-item > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
         await this.selectDropdownOption(data.fromCompany, 1500);
-        await this.page.waitForTimeout(500); // Wait for dropdown to close
-        //issue: tak sempat select choice from dropdown -> no input detected
+        await this.page.waitForTimeout(300);
         
         // To Company
         console.log('   - To Company...');
         await this.page.locator('div:nth-child(2) > div > .ant-row > .ant-col.ant-col-18 > .ant-form-item-control-input > .ant-form-item-control-input-content > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
         await this.selectDropdownOption(data.toCompany, 1500);
-        await this.page.waitForTimeout(500); // Wait for dropdown to close and form to update
-        //issue: same as above, unable to click "next" button
+        await this.page.waitForTimeout(300);
         
-        console.log('✅ BOOKING FORM COMPLETED - Ready to add jobs/trips');
+        // Wait for Next button to become enabled (form validation complete)
+        console.log('   - Waiting for form validation...');
+        await this.page.waitForTimeout(2000); // Increase wait for React to validate form
+        
+        console.log('✅ BOOKING FORM COMPLETED - Ready to submit');
     }
 
     /**
@@ -223,19 +221,13 @@ export class BookingPageCodegen {
     async submitBooking() {
         console.log('📤 Submitting booking...');
         
-        // Check if we need to navigate to confirmation page (Step 3)
-        const nextButton = this.page.getByRole('button', { name: 'Next right' }).nth(1);
-        const isNextButtonVisible = await nextButton.isVisible({ timeout: 2000 }).catch(() => false);
+        // Click Next to go to Step 3 (from Step 2 Job Details to Step 3 Confirmation)
+        console.log('   - Clicking Next to go to Step 3...');
+        await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
+        await this.page.waitForLoadState('domcontentloaded');
+        await this.page.waitForTimeout(1000);
         
-        if (isNextButtonVisible) {
-            console.log('   - Navigating to confirmation page...');
-            await nextButton.click();
-            await this.page.waitForLoadState('domcontentloaded');
-        } else {
-            console.log('   - Already on confirmation page');
-        }
-        
-        // Check "Override Duplicate Booking" checkbox (using codegen selector)
+        // Check "Override Duplicate Booking" checkbox
         console.log('   - Checking override duplicate booking...');
         await this.page.getByLabel('', { exact: true }).check();
         
@@ -243,10 +235,9 @@ export class BookingPageCodegen {
         console.log('   - Clicking Submit...');
         await this.page.getByRole('button', { name: 'Submit' }).click();
         
-        // Wait for success notification or page to settle after submission
-        // Use domcontentloaded instead of networkidle as some API calls may still be running
+        // Wait for redirect to booking detail page
         await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-        await this.page.waitForTimeout(2000); // Allow time for URL to update and page to settle
+        await this.page.waitForTimeout(1000);
         
         console.log('✅ Booking submitted successfully!');
     }

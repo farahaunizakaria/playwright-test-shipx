@@ -15,7 +15,7 @@ test.describe('Manage Section - Entity Display Verification', () => {
   });
 
   test('should navigate through all Manage entities and verify they display', async () => {
-    test.setTimeout(180000); // 3 minutes total
+    test.setTimeout(120000);
     const allEntities = getAllManageEntities();
     let successCount = 0;
     let failedEntities: string[] = [];

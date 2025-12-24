@@ -17,9 +17,7 @@
     "format": "prettier --write .",
     "codegen": "node -r dotenv/config -e \"require('child_process').spawn('npx', ['playwright', 'codegen', process.env.BASE_URL || 'http://localhost:3000'], {stdio: 'inherit'})\"",
     "codegen:url": "npx playwright codegen",
-    "test": "playwright test",
-    "test:install": "yarn playwright install && playwright test",
-    "ui": "playwright test --ui",
-    "headed": "playwright test --headed"
+    "test": "yarn playwright install && playwright test",
+    "ui": "yarn test --ui --headed"
   }
 }
