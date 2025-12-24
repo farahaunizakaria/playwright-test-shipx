@@ -164,10 +164,6 @@ export class TrackingPageCodegen {
 
     /**
      * CREATE/UPDATE: Assign driver and vehicle to leg
-     * Field IDs used:
-     * - form-company-selector: Transporter/Company
-     * - driverUuid: Driver (REQUIRED)
-     * - vehicleUuid: Vehicle (REQUIRED)
      */
     async assignLegResources(legData: LegData) {
         console.log('Assigning driver and vehicle...');
@@ -255,7 +251,6 @@ export class TrackingPageCodegen {
 
     /**
      * CREATE/UPDATE: Set leg timeline fields interactively
-     * Based on codegen: click edit button, then submit button for each time field
      * @param timelineData LegData containing time fields (planStart, start, startOut, end, endOut, planEnd)
      */
     async updateLegTimelineInteractive(timelineData: LegData) {

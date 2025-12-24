@@ -26,11 +26,9 @@ export class InvoicePage {
      * @param bookingId The booking ID to navigate to
      */
     async navigateToBooking(bookingId: string) {
-        console.log(`Navigating to booking: ${bookingId}`);
         await this.page.goto(`/bookings/${bookingId}`);
         await this.page.waitForLoadState('domcontentloaded');
-        await this.page.waitForTimeout(1000);
-        console.log('Booking page loaded');
+        await this.page.waitForTimeout(500);
     }
 
     /**
@@ -129,35 +127,21 @@ export class InvoicePage {
      * Submit the invoice (Create and Submit)
      */
     async submitInvoice() {
-        console.log('Submitting invoice...');
+        await this.page.waitForTimeout(1000);
 
-        // Wait for form to be ready
-        await this.page.waitForTimeout(1500);
-
-        // Click the charge item anchor/button to confirm selection
-        console.log('Confirming charge item selection...');
-        try {
-            const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
-            const isVisible = await chargeItemAnchor.isVisible({ timeout: 2000 }).catch(() => false);
-            if (isVisible) {
-                await chargeItemAnchor.click();
-                await this.page.waitForTimeout(800);
-                console.log('Charge item anchor clicked');
-            }
-        } catch (e) {
-            console.log(`Charge item anchor not found: ${e}`);
+        // Click the charge item anchor to confirm selection if visible
+        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
+        const isVisible = await chargeItemAnchor.isVisible({ timeout: 1000 }).catch(() => false);
+        if (isVisible) {
+            await chargeItemAnchor.click();
+            await this.page.waitForTimeout(500);
         }
 
-        // Click "Create and Submit" button
-        console.log('Clicking "Create and Submit"...');
-        await this.page.waitForTimeout(1000); // Extra wait to ensure form is ready
-        
+        await this.page.waitForTimeout(500);
         const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
         await submitButton.waitFor({ state: 'visible', timeout: 3000 });
         await submitButton.click();
-        await this.page.waitForTimeout(3000); // Wait for submission to complete
-
-        console.log('Invoice submitted successfully!');
+        await this.page.waitForTimeout(2000);
     }
 
     /**
@@ -173,24 +157,16 @@ export class InvoicePage {
      * Approve a customer invoice
      */
     async approveCustomerInvoice() {
-        console.log('Approving customer invoice...');
-        
-        // Click the approval button (exclamation-circle Customer button)
         const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Customer/ });
         await approvalButton.waitFor({ state: 'visible', timeout: 3000 });
         await approvalButton.click();
-        await this.page.waitForTimeout(800);
-        console.log('Approval button clicked');
+        await this.page.waitForTimeout(500);
 
-        // Click the "Approve" button
         const approveBtn = this.page.getByRole('button', { name: 'Approve' });
         await approveBtn.waitFor({ state: 'visible', timeout: 3000 });
         await approveBtn.click();
-        
-        // Wait for approval success message to appear
         await this.page.waitForSelector('text=has been approved', { timeout: 5000 }).catch(() => null);
-        await this.page.waitForTimeout(1000); // Additional buffer
-        console.log('Customer invoice approved');
+        await this.page.waitForTimeout(500);
     }
 
     /**
@@ -198,18 +174,10 @@ export class InvoicePage {
      * @returns The invoice number
      */
     async captureInvoiceNumber(): Promise<string> {
-        console.log('Capturing invoice number...');
-        
-        // Wait for invoice number to appear in the list
-        await this.page.waitForTimeout(1500);
-        
-        // The invoice number appears in a div with format like _INV25120006
+        await this.page.waitForTimeout(1000);
         const invoiceNumberElement = this.page.locator('div').filter({ hasText: /^_INV\d{8}$/ }).first();
         await invoiceNumberElement.waitFor({ state: 'visible', timeout: 3000 });
-        
         const invoiceNumber = await invoiceNumberElement.textContent();
-        console.log(`Invoice number captured: ${invoiceNumber}`);
-        
         return invoiceNumber || '';
     }
 
@@ -273,55 +241,34 @@ export class InvoicePage {
      * Submit the supplier payment
      */
     async submitSupplierPayment() {
-        console.log('Submitting supplier payment...');
+        await this.page.waitForTimeout(1000);
 
-        // Wait for form to be ready
-        await this.page.waitForTimeout(1500);
-
-        // Click the charge item anchor to confirm selection
-        console.log('Confirming charge item selection...');
-        try {
-            const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
-            const isVisible = await chargeItemAnchor.isVisible({ timeout: 2000 }).catch(() => false);
-            if (isVisible) {
-                await chargeItemAnchor.click();
-                await this.page.waitForTimeout(800);
-                console.log('Charge item anchor clicked');
-            }
-        } catch (e) {
-            console.log(`Charge item anchor not found: ${e}`);
+        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
+        const isVisible = await chargeItemAnchor.isVisible({ timeout: 1000 }).catch(() => false);
+        if (isVisible) {
+            await chargeItemAnchor.click();
+            await this.page.waitForTimeout(500);
         }
 
-        // Click "Create and Submit" button
-        console.log('Clicking "Create and Submit"...');
-        await this.page.waitForTimeout(1000);
-        
+        await this.page.waitForTimeout(500);
         const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
         await submitButton.waitFor({ state: 'visible', timeout: 3000 });
         await submitButton.click();
-        await this.page.waitForTimeout(3000); // Wait for submission to complete
-
-        console.log('Supplier payment submitted successfully!');
+        await this.page.waitForTimeout(2000);
     }
 
     /**
      * Approve a supplier payment
      */
     async approveSupplierPayment() {
-        console.log('Approving supplier payment...');
-        
-        // Click the approval button (exclamation-circle Trans button)
         const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Trans/ });
         await approvalButton.waitFor({ state: 'visible', timeout: 3000 });
         await approvalButton.click();
-        await this.page.waitForTimeout(800);
-        console.log('Approval button clicked');
+        await this.page.waitForTimeout(500);
 
-        // Click the "Approve" button
         const approveBtn = this.page.getByRole('button', { name: 'Approve' });
         await approveBtn.waitFor({ state: 'visible', timeout: 3000 });
         await approveBtn.click();
-        await this.page.waitForTimeout(2000); // Wait for approval to complete
-        console.log('Supplier payment approved');
+        await this.page.waitForTimeout(1000);
     }
 }
