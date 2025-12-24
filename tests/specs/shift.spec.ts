@@ -2,7 +2,8 @@ import { test, expect } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { ShiftPage } from '../pages/ShiftPage';
 
-test.describe('Shift Management Tests', () => {
+//TEST 5: TEST SHIFT CREATION WITH INCENTIVE, APPROVAL AND CANCELLATION
+test.describe('Shift Management Tests (Independent)', () => {
   let loginPage: LoginPage;
   let shiftPage: ShiftPage;
 

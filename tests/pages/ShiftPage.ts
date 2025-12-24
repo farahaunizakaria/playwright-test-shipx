@@ -1,6 +1,9 @@
 import { Page } from '@playwright/test';
 import { BasePage } from './BasePage';
 
+/**
+ * ShiftData interface for creating a shift
+ */
 interface ShiftData {
   driver: string;
   vehicle: string;

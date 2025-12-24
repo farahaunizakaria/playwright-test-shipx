@@ -2,11 +2,12 @@ import { test, expect } from '../fixtures/fixtures';
 import { ManageEntitiesPage } from '../pages/ManageEntitiesPage';
 import { MANAGE_ENTITIES, getAllManageEntities } from '../data/ManageEntitiesData';
 
+//TEST 6: TEST MANAGE ENTITIES NAVIGATION AND DISPLAY
 /**
  * Manage Entities Test Suite
  * Tests that all entity pages in the Manage section display correctly
  */
-test.describe('Manage Section - Entity Display Verification', () => {
+test.describe('Manage Section (Independent)', () => {
   let managePage: ManageEntitiesPage;
 
   test.beforeEach(async ({ authenticatedPage }) => {

@@ -12,7 +12,7 @@ test.describe('Update Leg', () => {
     const legTestData: LegData = {
         driver: 'Aeril - Aakhif Aeril',  // Using actual driver from system
         vehicle: 'ABC001 - ABC001',      // Using actual vehicle from system
-        planStart: true,                 // Click to save real-time
+        planStart: false,               // Auto-set when driver/vehicle submitted, skip manual update
         start: true,                     // Click to save real-time
         startOut: true,                  // Click to save real-time
         planEnd: true,                   // Click to save real-time
@@ -48,15 +48,15 @@ test.describe('Update Leg', () => {
         // Step 4: Sync table and click first leg - modal should open
         console.log('Step 4: Clicking first leg to open modal...');
         await authenticatedPage.getByRole('button', { name: 'sync' }).click();
-        await authenticatedPage.waitForTimeout(1500);
+        await authenticatedPage.waitForTimeout(1000);
         
         // Click first leg button - this opens the modal
         await authenticatedPage.locator('table').getByRole('button').first().click();
-        await authenticatedPage.waitForTimeout(2000);
+        await authenticatedPage.waitForTimeout(1000);
         
-        // Step 5: Wait for modal to be visible
+        // Step 5: Wait for modal to be visible (Update Leg modal)
         console.log('Step 5: Waiting for modal...');
-        const modal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content');
+        let modal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content').last();
         await modal.waitFor({ state: 'visible', timeout: 5000 });
         console.log('Modal is visible');
         
@@ -78,24 +78,43 @@ test.describe('Update Leg', () => {
         // Step 8: Submit driver and vehicle assignment
         console.log('Step 8: Submitting driver and vehicle...');
         await trackingPage.submitLeg();
+        await authenticatedPage.waitForTimeout(1000);
         
-        // Step 9: Wait for submission to complete
-        console.log('Step 9: Waiting for submission to complete...');
-        await authenticatedPage.waitForTimeout(2000); // Wait for success status
+        // Step 9: CLOSE the Update Leg modal (Trip modal stays open)
+        console.log('Step 9: Closing Update Leg modal after driver/vehicle submit...');
+        await trackingPage.closeLegDialog();
+        await authenticatedPage.waitForTimeout(1000);
         
-        // Step 10: Update all timeline fields (modal still open)
-        console.log('Step 10: Updating timeline fields with real-time data...');
-        await authenticatedPage.waitForTimeout(1000); // Additional timeout before updating timeline
+        // Step 10: SYNC the trip table inside the Trip modal (critical step!)
+        console.log('Step 10: Syncing trip table...');
+        // The sync button is inside the Trip modal that's still open
+        const tripModal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content');
+        await tripModal.getByRole('button', { name: 'sync' }).click();
+        await authenticatedPage.waitForTimeout(2000);
+        
+        // Step 11: Click the leg button again (inside the same Trip modal table)
+        console.log('Step 11: Reopening leg for timeline updates...');
+        await tripModal.locator('table').getByRole('button').first().click();
+        await authenticatedPage.waitForTimeout(2000);
+        
+        // Wait for Update Leg modal to appear again
+        modal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content').last();
+        await modal.waitFor({ state: 'visible', timeout: 5000 });
+        console.log('   ✅ Update Leg modal reopened, ready for timeline updates');
+        
+        // Step 12: Now update timeline fields (leg has UUIDs from previous submit)
+        console.log('Step 12: Updating timeline fields with real-time data...');
         await trackingPage.updateLegTimelineInteractive(legTestData);
         
-        // Step 11: Wait for timeline updates to complete
-        console.log('Step 11: Waiting for timeline updates...');
-        await authenticatedPage.waitForTimeout(2000); // Wait for updates to process
-        
-        // Step 12: Final submit and close
-        console.log('Step 12: Final submit and close...');
-        await trackingPage.submitLeg();
+        // Step 13: Close modal after timeline updates
+        console.log('Step 13: Closing modal after timeline updates...');
         await trackingPage.closeLegDialog();
+        await authenticatedPage.waitForTimeout(1000);
+        
+        // Step 14: Final sync to refresh and verify data in table
+        console.log('Step 14: Final sync to refresh table...');
+        await authenticatedPage.getByRole('button', { name: 'sync' }).last().click();
+        await authenticatedPage.waitForTimeout(1000);
         
         console.log('✅ Leg updated successfully with driver, vehicle, and all timeline fields!');
     });

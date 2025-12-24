@@ -1,5 +1,8 @@
 import { Page } from "@playwright/test";
 
+/**
+ * InvoiceData interfaces for creating customer invoices and supplier payments
+ */
 export interface InvoiceCostItem {
     chargeItem: string;           // e.g., "CS-FAF - FAF Charges"
     sellBaseRate: string | number;
@@ -211,7 +214,7 @@ export class InvoicePage {
     }
 
     /**
-     * Create a supplier payment for an approved customer invoice
+     * Create a supplier payment 
      * @param invoiceNumber The invoice number from customer invoice
      * @param supplierData Supplier payment data
      */
