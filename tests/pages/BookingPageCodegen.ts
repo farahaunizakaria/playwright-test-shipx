@@ -90,7 +90,9 @@ export class BookingPageCodegen {
         
         // Billing Customer
         console.log('   - Billing Customer...');
-        await this.page.locator('.ant-select-selection-search').first().click();
+        //await this.page.locator('.ant-select-selection-search').first().click();
+        //await this.page.locator('#billing-customer-selector').click();
+        await this.page.locator('#billing-customer-selector .ant-select-selector').click();
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.billingCustomer);
         

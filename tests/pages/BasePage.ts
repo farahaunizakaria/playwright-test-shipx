@@ -1,4 +1,5 @@
 import { Page, Locator } from '@playwright/test';
+import { readFileSync, existsSync } from 'fs';
 
 /**
  * BasePage class contains common resuable methods and properties
@@ -64,5 +65,42 @@ export class BasePage {
    */
   async takeScreenshot(name: string) {
     await this.page.screenshot({ path: `screenshots/${name}.png`, fullPage: true });
+  }
+
+  /**
+   * Read the latest booking ID from file
+   * @returns The booking ID or null if file doesn't exist
+   */
+  getLatestBookingId(): string | null {
+    const filePath = 'latest-booking-id.txt';
+    
+    if (!existsSync(filePath)) {
+      console.warn('⚠️ latest-booking-id.txt not found');
+      return null;
+    }
+
+    try {
+      const bookingId = readFileSync(filePath, 'utf-8').trim();
+      console.log(`📋 Read booking ID from file: ${bookingId}`);
+      return bookingId;
+    } catch (error) {
+      console.error(`❌ Error reading booking ID: ${error}`);
+      return null;
+    }
+  }
+
+  /**
+   * Navigate to a booking by ID from the latest-booking-id.txt file
+   */
+  async navigateToLatestBooking() {
+    const bookingId = this.getLatestBookingId();
+    
+    if (!bookingId) {
+      throw new Error('No booking ID available. Run create-booking test first.');
+    }
+
+    await this.goto(`/bookings/${bookingId}`);
+    await this.waitForPageLoad();
+    console.log(`✅ Navigated to booking: ${bookingId}`);
   }
 }

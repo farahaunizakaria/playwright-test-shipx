@@ -1,4 +1,5 @@
 import { Page } from "@playwright/test";
+import { BasePage } from "./BasePage";
 
 /**
  * InvoiceData interfaces for creating customer invoices and supplier payments
@@ -14,12 +15,57 @@ export interface InvoiceData {
     costItems: InvoiceCostItem[];
 }
 
-export class InvoicePage {
-    readonly page: Page;
+export class InvoicePage extends BasePage {
 
     constructor(page: Page) {
-        this.page = page;
+        super(page);
     }
+
+    // ===== HELPER METHODS =====
+
+    /**
+     * Helper: Open a dropdown by placeholder text
+     */
+    private async openDropdown(placeholderText: string) {
+        const dropdown = this.page.locator('div')
+            .filter({ hasText: new RegExp(`^${placeholderText}$`) }).nth(4);
+        await dropdown.waitFor({ state: 'visible', timeout: 3000 });
+        await dropdown.click();
+        await this.page.waitForTimeout(800);
+    }
+
+    /**
+     * Helper: Select a template from dropdown
+     */
+    private async selectTemplate(templateName: string) {
+        await this.openDropdown('Select a template...');
+        
+        const template = this.page.locator(`[title="${templateName}"]`).first();
+        await template.waitFor({ state: 'visible', timeout: 3000 });
+        await template.click();
+        await this.page.waitForTimeout(1500);
+    }
+
+    /**
+     * Helper: Click the "Create and Submit" button
+     */
+    private async clickSubmitButton() {
+        await this.page.waitForTimeout(1000);
+        
+        // Optional: Click charge item anchor if visible
+        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
+        if (await chargeItemAnchor.isVisible({ timeout: 1000 }).catch(() => false)) {
+            await chargeItemAnchor.click();
+            await this.page.waitForTimeout(500);
+        }
+        
+        const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
+        await submitButton.waitFor({ state: 'visible', timeout: 3000 });
+        await submitButton.click();
+        await this.page.waitForTimeout(2000);
+    }
+
+    // ===== PUBLIC METHODS =====
 
     /**
      * Navigate to a booking by ID
@@ -38,32 +84,20 @@ export class InvoicePage {
     async createCustomerInvoice(data: InvoiceData) {
         console.log('Starting customer invoice creation...');
 
-        // Step 1: Click voucher types button
+        // Click voucher types button
         console.log('Opening voucher types menu...');
         await this.page.locator('#voucher-types-button').click();
         await this.page.waitForTimeout(1000); // Increased wait for menu to appear
 
-        // Step 2: Select Customer Invoice
+        // Select Customer Invoice
         console.log('Selecting "Customer Invoice"...');
         await this.page.getByRole('button', { name: 'dollar Customer Invoice' }).click();
-        await this.page.waitForTimeout(1500); // Wait for page transition
+        await this.page.waitForTimeout(1500);
 
-        // Step 3: Select template
-        console.log(`Selecting template: ${data.template}...`);
-        const templateDropdown = this.page.locator('div').filter({ hasText: /^Select a template\.\.\.$/ }).nth(4);
-        await templateDropdown.waitFor({ state: 'visible', timeout: 3000 });
-        await templateDropdown.click();
-        await this.page.waitForTimeout(800);
-        
-        // Click the specific template
-        const template = this.page.locator(`[title="${data.template}"]`).first();
-        await template.waitFor({ state: 'visible', timeout: 3000 });
-        await template.click();
-        await this.page.waitForTimeout(1500); // Wait for template to load and form to initialize
-        console.log(`Template "${data.template}" selected`);
+        // Select template
+        await this.selectTemplate(data.template);
 
-        // Step 4: Add cost items
-        console.log('Adding cost items...');
+        // Add cost items
         for (let i = 0; i < data.costItems.length; i++) {
             const item = data.costItems[i];
             await this.addCostItem(item, i);
@@ -86,15 +120,11 @@ export class InvoicePage {
         const addButton = this.page.locator('#invoice-add-new-cost-item-button');
         await addButton.waitFor({ state: 'visible', timeout: 3000 });
         await addButton.click();
-        await this.page.waitForTimeout(1000); // Wait for form to appear
+        await this.page.waitForTimeout(1000);
 
-        // Click charge item dropdown
-        const chargeDropdown = this.page.locator('div').filter({ hasText: /^Select a charge item\.\.\.$/ }).nth(4);
-        await chargeDropdown.waitFor({ state: 'visible', timeout: 3000 });
-        await chargeDropdown.click();
-        await this.page.waitForTimeout(800); // Wait for options to appear
+        // Click charge item dropdown and select
+        await this.openDropdown('Select a charge item...');
 
-        // Select the charge item
         const chargeOption = this.page.locator('div').filter({ hasText: new RegExp(`^${item.chargeItem}$`) }).first();
         await chargeOption.waitFor({ state: 'visible', timeout: 3000 });
         await chargeOption.click();
@@ -120,28 +150,14 @@ export class InvoicePage {
         await createButton.click();
         await this.page.waitForTimeout(1200); // Wait for item to be added and form to reset
 
-        console.log(`      Cost item added: ${item.chargeItem}`);
+        console.log(`Cost item added: ${item.chargeItem}`);
     }
 
     /**
      * Submit the invoice (Create and Submit)
      */
     async submitInvoice() {
-        await this.page.waitForTimeout(1000);
-
-        // Click the charge item anchor to confirm selection if visible
-        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
-        const isVisible = await chargeItemAnchor.isVisible({ timeout: 1000 }).catch(() => false);
-        if (isVisible) {
-            await chargeItemAnchor.click();
-            await this.page.waitForTimeout(500);
-        }
-
-        await this.page.waitForTimeout(500);
-        const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
-        await submitButton.waitFor({ state: 'visible', timeout: 3000 });
-        await submitButton.click();
-        await this.page.waitForTimeout(2000);
+        await this.clickSubmitButton();
     }
 
     /**
@@ -189,72 +205,41 @@ export class InvoicePage {
     async createSupplierPayment(invoiceNumber: string, supplierData: InvoiceData) {
         console.log(`💸 Starting supplier payment creation for invoice: ${invoiceNumber}...`);
 
-        // Step 1: Click voucher types button
+        // Click voucher types button
         console.log('Opening voucher types menu...');
         await this.page.locator('#voucher-types-button').click();
         await this.page.waitForTimeout(1000);
 
-        // Step 2: Select Supplier Payment
+        // Select Supplier Payment
         console.log('Selecting "Supplier Payment"...');
         await this.page.getByRole('button', { name: 'file Supplier Payment' }).click();
         await this.page.waitForTimeout(1500); // Wait for page transition
 
-        // Step 3: Fill Invoice Number
+        // Fill Invoice Number
         console.log(`Filling invoice number: ${invoiceNumber}...`);
         const invoiceNumberField = this.page.getByRole('textbox', { name: '* Invoice No.' });
         await invoiceNumberField.waitFor({ state: 'visible', timeout: 3000 });
         await invoiceNumberField.click();
         await invoiceNumberField.fill(invoiceNumber);
         await this.page.waitForTimeout(800);
-        console.log('Invoice number filled');
 
-        // Step 4: Select company
-        console.log('Selecting company...');
-        const companyDropdown = this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).nth(4);
-        await companyDropdown.waitFor({ state: 'visible', timeout: 3000 });
-        await companyDropdown.click();
-        await this.page.waitForTimeout(800);
+        // Select company
+        await this.openDropdown('Select a company...');
 
-        // Select first company option
         const companyOption = this.page.locator('.ant-select-item').first();
         await companyOption.waitFor({ state: 'visible', timeout: 3000 });
         await companyOption.click();
         await this.page.waitForTimeout(1000);
-        console.log('Company selected');
 
-        // Step 5: Select template
-        console.log(`Selecting template: ${supplierData.template}...`);
-        const templateDropdown = this.page.locator('div').filter({ hasText: /^Select a template\.\.\.$/ }).nth(4);
-        await templateDropdown.waitFor({ state: 'visible', timeout: 3000 });
-        await templateDropdown.click();
-        await this.page.waitForTimeout(800);
-        
-        // Click the specific template
-        const template = this.page.locator(`[title="${supplierData.template}"]`).first();
-        await template.waitFor({ state: 'visible', timeout: 3000 });
-        await template.click();
-        await this.page.waitForTimeout(1500); // Wait for template to load
-        console.log(`Template "${supplierData.template}" selected`);
+        // Select template
+        await this.selectTemplate(supplierData.template);
     }
 
     /**
      * Submit the supplier payment
      */
     async submitSupplierPayment() {
-        await this.page.waitForTimeout(1000);
-
-        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
-        const isVisible = await chargeItemAnchor.isVisible({ timeout: 1000 }).catch(() => false);
-        if (isVisible) {
-            await chargeItemAnchor.click();
-            await this.page.waitForTimeout(500);
-        }
-
-        await this.page.waitForTimeout(500);
-        const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
-        await submitButton.waitFor({ state: 'visible', timeout: 3000 });
-        await submitButton.click();
-        await this.page.waitForTimeout(2000);
+        await this.clickSubmitButton();
     }
 
     /**

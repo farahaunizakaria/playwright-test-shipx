@@ -1,6 +1,5 @@
 import { test, expect } from '../fixtures/fixtures';
 import { InvoicePage } from '../pages/InvoicePage';
-import { readFileSync } from 'fs';
 
 const sampleInvoiceData = {
     template: 'INVOICE:DETAILS',
@@ -25,7 +24,12 @@ test.describe('Customer Invoice', () => {
     test('should create and submit customer invoice', async ({ authenticatedPage }) => {
         test.setTimeout(60000);
         
-        const bookingId = readFileSync('latest-booking-id.txt', 'utf-8').trim();
+        // Use BasePage method instead of direct readFileSync
+        const bookingId = invoicePage.getLatestBookingId();
+        if (!bookingId) {
+            throw new Error('No booking ID found. Run create-booking test first.');
+        }
+        console.log(`📋 Using booking: ${bookingId}`);
         
         await invoicePage.navigateToBooking(bookingId);
         await invoicePage.createAndSubmitInvoice(sampleInvoiceData);
@@ -35,7 +39,12 @@ test.describe('Customer Invoice', () => {
     test('should create supplier payment from approved customer invoice', async ({ authenticatedPage }) => {
         test.setTimeout(60000);
         
-        const bookingId = readFileSync('latest-booking-id.txt', 'utf-8').trim();
+        // Use BasePage method instead of direct readFileSync
+        const bookingId = invoicePage.getLatestBookingId();
+        if (!bookingId) {
+            throw new Error('No booking ID found. Run create-booking test first.');
+        }
+        console.log(`📋 Using booking: ${bookingId}`);
         
         await invoicePage.navigateToBooking(bookingId);
         const invoiceNumber = await invoicePage.captureInvoiceNumber();
