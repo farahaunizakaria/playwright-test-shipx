@@ -1,12 +1,9 @@
 import { test, expect } from '../fixtures/fixtures';
 import { TrackingPageCodegen } from '../pages/TrackingPageCodegen';
 import { LegData } from '../data/TrackingData';
-import { readFileSync } from 'fs'
 
 //TEST 3: TEST UPDATE LEGS AND TRIPS
 test.describe('Update Leg', () => {
-    
-    const BOOKING_ID = readFileSync('latest-booking-id.txt', 'utf-8').trim();
     
     // Test data for leg update
     const legTestData: LegData = {
@@ -29,26 +26,39 @@ test.describe('Update Leg', () => {
     test('should update all legs in booking dynamically', async ({ authenticatedPage }) => {
         test.setTimeout(60000);
         
+        // Get booking ID from file using BasePage method
+        const bookingId = trackingPage.getLatestBookingId();
+        if (!bookingId) {
+            throw new Error('No booking ID found. Run create-booking test first.');
+        }
+        console.log(`📋 Using booking: ${bookingId}`);
+        
         // Navigate and accept booking
-        await trackingPage.navigateToBooking(BOOKING_ID);
+        await trackingPage.navigateToBooking(bookingId);
         await trackingPage.acceptBooking();
         
-        // Refresh page
+        // Refresh page and wait for stable state
         await authenticatedPage.reload();
-        await authenticatedPage.waitForLoadState('domcontentloaded');
-        await authenticatedPage.waitForTimeout(500);
+        await authenticatedPage.waitForLoadState('networkidle');
         
         // Sync and open leg modal
-        await authenticatedPage.getByRole('button', { name: 'sync' }).click();
-        await authenticatedPage.waitForTimeout(1000);
-        await authenticatedPage.locator('table').getByRole('button').first().click();
-        await authenticatedPage.waitForTimeout(1000);
+        const syncButton = authenticatedPage.getByRole('button', { name: 'sync' });
+        await syncButton.waitFor({ state: 'visible', timeout: 5000 });
+        await syncButton.click();
+        await authenticatedPage.waitForTimeout(1500);
         
-        // Wait for modal and sync legs
+        const firstLegButton = authenticatedPage.locator('table').getByRole('button').first();
+        await firstLegButton.waitFor({ state: 'visible', timeout: 5000 });
+        await firstLegButton.click();
+        
+        // Wait for modal to appear
         const modal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content');
         await modal.waitFor({ state: 'visible', timeout: 5000 });
+        
+        // Sync legs if button exists
         const syncButtonInModal = modal.getByRole('button', { name: 'sync' });
-        if (await syncButtonInModal.count() > 0) {
+        const syncExists = await syncButtonInModal.isVisible({ timeout: 2000 }).catch(() => false);
+        if (syncExists) {
             await syncButtonInModal.click();
             await authenticatedPage.waitForTimeout(1500);
         }
@@ -56,16 +66,25 @@ test.describe('Update Leg', () => {
         // Assign driver and vehicle, then submit
         await trackingPage.assignLegResources(legTestData);
         await trackingPage.submitLeg();
-        await authenticatedPage.waitForTimeout(500);
+        
+        // Wait for submission to complete
+        await authenticatedPage.waitForLoadState('networkidle');
         
         // Close modal, sync trip, reopen leg modal
         await trackingPage.closeLegDialog();
         await authenticatedPage.waitForTimeout(500);
+        
         const tripModal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content');
-        await tripModal.getByRole('button', { name: 'sync' }).click();
+        await tripModal.waitFor({ state: 'visible', timeout: 5000 });
+        
+        const tripSyncButton = tripModal.getByRole('button', { name: 'sync' });
+        await tripSyncButton.waitFor({ state: 'visible', timeout: 5000 });
+        await tripSyncButton.click();
         await authenticatedPage.waitForTimeout(1500);
-        await tripModal.locator('table').getByRole('button').first().click();
-        await authenticatedPage.waitForTimeout(1500);
+        
+        const tripLegButton = tripModal.locator('table').getByRole('button').first();
+        await tripLegButton.waitFor({ state: 'visible', timeout: 5000 });
+        await tripLegButton.click();
         
         // Wait for Update Leg modal and update timeline fields
         const updateLegModal = authenticatedPage.locator('.ant-modal-wrap .ant-modal-content').last();
@@ -75,7 +94,10 @@ test.describe('Update Leg', () => {
         // Close and final sync
         await trackingPage.closeLegDialog();
         await authenticatedPage.waitForTimeout(500);
-        await authenticatedPage.getByRole('button', { name: 'sync' }).last().click();
+        
+        const finalSyncButton = authenticatedPage.getByRole('button', { name: 'sync' }).last();
+        await finalSyncButton.waitFor({ state: 'visible', timeout: 5000 });
+        await finalSyncButton.click();
         await authenticatedPage.waitForTimeout(500);
     });
 });

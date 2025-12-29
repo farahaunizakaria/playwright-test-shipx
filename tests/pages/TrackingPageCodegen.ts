@@ -1,12 +1,12 @@
 import { Page, expect } from "@playwright/test";
 import { LegData, JobData, TripData, BookingTrackingState } from "../data/TrackingData";
+import { BasePage } from "./BasePage";
 
-export class TrackingPageCodegen {
-    readonly page: Page;
+export class TrackingPageCodegen extends BasePage {
     state: BookingTrackingState = { bookingId: '' };
 
     constructor(page: Page) {
-        this.page = page;
+        super(page);
     }
 
     /**
@@ -175,75 +175,51 @@ export class TrackingPageCodegen {
         if (legData.driver) {
             console.log(`DRIVER ASSIGNMENT: ${legData.driver}`);
             
-            // Use ID selector for reliability
             const driverField = modal.locator('#driverUuid');
             
-            if (await driverField.count() > 0) {
-                console.log(`Clicking driver field (#driverUuid)...`);
-                await driverField.click();
-                await this.page.waitForTimeout(800);
-                
-                // Check if dropdown opened
-                const dropdownVisible = await this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').count();
-                console.log(`Dropdown visible: ${dropdownVisible > 0}`);
-                
-                if (dropdownVisible > 0) {
-                    console.log(`Selecting option: "${legData.driver}"`);
-                    await this.selectDropdownOption(legData.driver);
-                    
-                    // Wait for selection to be registered and dropdown to close
-                    await this.page.waitForTimeout(800);
-                    
-                    // Verify the value was set by checking the field
-                    const fieldValue = await driverField.getAttribute('value');
-                    console.log(`  Step 4: Field value after selection: "${fieldValue}"`);
-                    
-                    console.log(`Driver assignment complete`);
-                } else {
-                    console.log(`Dropdown did not open for driver field`);
-                }
-            } else {
-                console.log(`Driver field not found by ID selector`);
-            }
+            // Wait for field to be ready
+            await driverField.waitFor({ state: 'visible', timeout: 5000 });
+            console.log(`Clicking driver field (#driverUuid)...`);
+            await driverField.click();
+            
+            // Wait for dropdown to actually appear
+            const dropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+            await dropdown.waitFor({ state: 'visible', timeout: 5000 });
+            console.log(`Dropdown visible: true`);
+            
+            console.log(`Selecting option: "${legData.driver}"`);
+            await this.selectDropdownOption(legData.driver);
+            
+            // Verify selection by waiting for dropdown to close
+            await dropdown.waitFor({ state: 'hidden', timeout: 5000 });
+            console.log(`Driver assignment complete`);
         }
 
-        // Wait between assignments to ensure form is ready
-        await this.page.waitForTimeout(1000);
+        // Wait between assignments
+        await this.page.waitForTimeout(500);
 
         // Assign Vehicle by ID
         if (legData.vehicle) {
             console.log(`VEHICLE ASSIGNMENT: ${legData.vehicle}`);
             
-            // Use ID selector for reliability
             const vehicleField = modal.locator('#vehicleUuid');
             
-            if (await vehicleField.count() > 0) {
-                console.log(`  Step 1: Clicking vehicle field (#vehicleUuid)...`);
-                await vehicleField.click();
-                await this.page.waitForTimeout(800);
-                
-                // Check if dropdown opened
-                const dropdownVisible = await this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)').count();
-                console.log(`Dropdown visible: ${dropdownVisible > 0}`);
-                
-                if (dropdownVisible > 0) {
-                    console.log(`Selecting option: "${legData.vehicle}"`);
-                    await this.selectDropdownOption(legData.vehicle);
-                    
-                    // Wait for selection to be registered and dropdown to close
-                    await this.page.waitForTimeout(800);
-                    
-                    // Verify the value was set by checking the field
-                    const fieldValue = await vehicleField.getAttribute('value');
-                    console.log(`  Step 4: Field value after selection: "${fieldValue}"`);
-                    
-                    console.log(`Vehicle assignment complete`);
-                } else {
-                    console.log(`Dropdown did not open for vehicle field`);
-                }
-            } else {
-                console.log(`Vehicle field not found by ID selector`);
-            }
+            // Wait for field to be ready
+            await vehicleField.waitFor({ state: 'visible', timeout: 5000 });
+            console.log(`Clicking vehicle field (#vehicleUuid)...`);
+            await vehicleField.click();
+            
+            // Wait for dropdown to actually appear
+            const dropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+            await dropdown.waitFor({ state: 'visible', timeout: 5000 });
+            console.log(`Dropdown visible: true`);
+            
+            console.log(`Selecting option: "${legData.vehicle}"`);
+            await this.selectDropdownOption(legData.vehicle);
+            
+            // Verify selection by waiting for dropdown to close
+            await dropdown.waitFor({ state: 'hidden', timeout: 5000 });
+            console.log(`Vehicle assignment complete`);
         }
 
         console.log('All resources assigned');
