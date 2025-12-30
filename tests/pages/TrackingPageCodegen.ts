@@ -88,6 +88,67 @@ export class TrackingPageCodegen extends BasePage {
     }
 
     /**
+     * Sync booking to trigger leg status change from DELETED to PENDING
+     * Uses retry mechanism with force clicks for reliability
+     */
+    async syncBooking() {
+        console.log('🔄 Syncing booking...');
+        
+        // Reload and stabilize page first
+        await this.page.reload();
+        await this.page.waitForLoadState('networkidle');
+        await this.page.waitForTimeout(2000);
+        console.log('✅ Page reloaded and stable');
+        
+        // Find sync button using icon selector
+        const syncButton = this.page.locator('button:has(span.anticon-sync)').first();
+        await syncButton.waitFor({ state: 'visible', timeout: 10000 });
+        await this.page.waitForTimeout(1000);
+        
+        // Retry clicking with force if needed
+        for (let i = 0; i < 3; i++) {
+            try {
+                await syncButton.click({ force: true, timeout: 3000 });
+                console.log(`✅ Sync button clicked (attempt ${i + 1})`);
+                break;
+            } catch (e) {
+                if (i === 2) {
+                    await this.page.screenshot({ path: 'sync-button-not-clickable.png', fullPage: true });
+                    throw new Error('Sync button could not be clicked after 3 attempts');
+                }
+                console.log(`⚠️ Sync click attempt ${i + 1} failed, retrying...`);
+                await this.page.waitForTimeout(1000);
+            }
+        }
+        
+        await this.page.waitForTimeout(3000);
+        console.log('⏳ Waiting for sync to complete...');
+    }
+
+    /**
+     * Wait for leg status to show PENDING (format: "1-PENDING", "2-PENDING" etc.)
+     * Takes screenshot on failure for debugging
+     */
+    async waitForPendingStatus() {
+        console.log('👀 Checking for PENDING status...');
+        const pendingStatus = this.page.locator('table').getByText(/-PENDING/, { exact: false });
+        
+        try {
+            await pendingStatus.waitFor({ state: 'visible', timeout: 20000 });
+            console.log('✅ PENDING status found - leg is ready!');
+            await this.page.waitForTimeout(1000);
+        } catch (e) {
+            console.log('❌ PENDING status not found after sync!');
+            await this.page.screenshot({ path: 'pending-status-not-found.png', fullPage: true });
+            
+            const tableContent = await this.page.locator('table').textContent();
+            console.log('Table content:', tableContent?.substring(0, 500));
+            
+            throw new Error('Leg status did not change to PENDING after sync. Check screenshot.');
+        }
+    }
+
+    /**
      * UTILITY: Wait for leg status to change from DELETED to PENDING
      * The system needs time to process the state change
      */
@@ -311,6 +372,69 @@ export class TrackingPageCodegen extends BasePage {
      */
     async submitLeg() {
         await this.submitLegDriverVehicle();
+    }
+
+    /**
+     * Sync a modal by clicking its sync button (uses icon selector)
+     */
+    async syncModal(modalLocator: ReturnType<Page['locator']>, description: string = 'modal'): Promise<boolean> {
+        const syncButton = modalLocator.locator('button:has(span.anticon-sync)');
+        const isVisible = await syncButton.isVisible({ timeout: 2000 }).catch(() => false);
+        
+        if (isVisible) {
+            await syncButton.click({ force: true });
+            await this.page.waitForTimeout(2000);
+            console.log(`✅ ${description} synced`);
+            return true;
+        }
+        
+        console.log(`⚠️ Sync button not found in ${description}`);
+        return false;
+    }
+
+    /**
+     * Open Trip modal by clicking first leg in table
+     */
+    async openTripModal() {
+        const firstLegButton = this.page.locator('table').getByRole('button').first();
+        await firstLegButton.waitFor({ state: 'visible', timeout: 5000 });
+        await firstLegButton.click();
+        await this.page.waitForTimeout(1500);
+        
+        const tripModal = this.page.locator('.ant-modal-wrap').filter({ hasText: 'Trip (' });
+        await tripModal.waitFor({ state: 'visible', timeout: 5000 });
+        console.log('✅ Trip modal opened');
+        
+        return tripModal;
+    }
+
+    /**
+     * Open Update Leg modal from within Trip modal
+     */
+    async openUpdateLegModal(tripModal: ReturnType<Page['locator']>) {
+        const legButton = tripModal.locator('table').getByRole('button').first();
+        await legButton.waitFor({ state: 'visible', timeout: 5000 });
+        await this.page.waitForTimeout(1000);
+        await legButton.click({ force: true });
+        await this.page.waitForTimeout(1500);
+        
+        const updateLegModal = this.page.locator('.ant-modal-wrap').filter({ hasText: 'Update Leg' });
+        await updateLegModal.waitFor({ state: 'visible', timeout: 5000 });
+        console.log('✅ Update Leg modal opened');
+        
+        return updateLegModal;
+    }
+
+    /**
+     * Close Update Leg modal (keeps Trip modal open)
+     */
+    async closeUpdateLegModal() {
+        console.log('🚪 Closing Update Leg modal...');
+        const closeButton = this.page.getByLabel('Update Leg').getByRole('button', { name: 'Close', exact: true });
+        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
+        await closeButton.click();
+        await this.page.waitForTimeout(1000);
+        console.log('✅ Update Leg modal closed');
     }
 
     /**
