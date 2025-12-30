@@ -94,16 +94,10 @@ export class TrackingPageCodegen extends BasePage {
     async waitForLegStatusChange(): Promise<void> {
         console.log('⏳ Waiting for leg status to change from DELETED to PENDING...');
         
-        // Wait for status cell to change - look for "PENDING" text in the table
         const pendingStatus = this.page.locator('table').getByText('PENDING', { exact: false });
-        
-        try {
-            await pendingStatus.waitFor({ state: 'visible', timeout: 15000 });
-            console.log('✅ Leg status changed to PENDING');
-            await this.page.waitForTimeout(1000); // Extra wait for UI to fully update
-        } catch (e) {
-            console.log('⚠️ Timeout waiting for PENDING status, continuing anyway...');
-        }
+        await pendingStatus.waitFor({ state: 'visible', timeout: 15000 });
+        console.log('✅ Leg status changed to PENDING');
+        await this.page.waitForTimeout(1000);
     }
 
     /**
@@ -130,36 +124,10 @@ export class TrackingPageCodegen extends BasePage {
         await this.page.locator('table').getByRole('button').first().click();
         await this.page.waitForTimeout(2000);
         
-        // Wait for modal/dialog to appear
-        console.log('  • Waiting for modal to appear...');
-        try {
-            // Wait for either HTML dialog or Ant Design modal
-            const modalAppeared = await Promise.race([
-                this.page.locator('dialog').first().waitFor({ state: 'visible', timeout: 3000 }),
-                this.page.locator('.ant-modal-wrap').first().waitFor({ state: 'visible', timeout: 3000 })
-            ]).catch(() => null);
-            
-            if (modalAppeared) {
-                console.log('✅ Modal appeared after leg click');
-                await this.page.waitForTimeout(1000);
-            } else {
-                console.log('⚠️ Modal did not appear - checking page structure...');
-                const dialogs = await this.page.locator('dialog').count();
-                const antModals = await this.page.locator('.ant-modal-wrap').count();
-                const antModalsInner = await this.page.locator('.ant-modal-content').count();
-                console.log(`  Dialogs found: ${dialogs}, Ant modals: ${antModals}, Ant modal content: ${antModalsInner}`);
-                
-                // Check if there's an edit button we need to click
-                const editButtons = await this.page.locator('button').filter({ hasText: /edit|Edit/ }).count();
-                console.log(`  Edit buttons found: ${editButtons}`);
-                
-                await this.page.screenshot({ path: 'modal-not-appeared.png' });
-            }
-        } catch (e) {
-            console.log(`⚠️ Error waiting for modal: ${e}`);
-        }
-
-        console.log(`✅ Leg row #${legRowIndex} clicked`);
+        // Wait for modal to appear
+        await this.page.locator('.ant-modal-wrap').first().waitFor({ state: 'visible', timeout: 5000 });
+        console.log(`✅ Leg modal opened`);
+        await this.page.waitForTimeout(1000);
     }
 
     /**
@@ -277,26 +245,12 @@ export class TrackingPageCodegen extends BasePage {
     async submitLegDriverVehicle() {
         console.log('📤 Submitting driver and vehicle assignment...');
         
-        try {
-            // Look for submit button inside modal (after driver/vehicle assignment)
-            const modal = this.page.locator('.ant-modal-wrap .ant-modal-content');
-            const submitButton = modal.locator('#edit-leg-form-submit-button');
-            const isVisible = await submitButton.isVisible({ timeout: 2000 }).catch(() => false);
-            
-            if (isVisible) {
-                const text = await submitButton.textContent();
-                await submitButton.click();
-                await this.page.waitForTimeout(1000); // Wait for driver/vehicle to save
-                console.log(`✅ Driver/Vehicle submitted (${text})`);
-                return;
-            }
-
-            console.log('⚠️ Driver/Vehicle submit button not found');
-            
-        } catch (e) {
-            console.log(`⚠️ Error submitting driver/vehicle: ${e}`);
-            throw e;
-        }
+        const modal = this.page.locator('.ant-modal-wrap .ant-modal-content');
+        const submitButton = modal.locator('#edit-leg-form-submit-button');
+        await submitButton.waitFor({ state: 'visible', timeout: 5000 });
+        await submitButton.click();
+        await this.page.waitForTimeout(1000);
+        console.log('✅ Driver/Vehicle submitted');
     }
 
     /**
@@ -356,16 +310,7 @@ export class TrackingPageCodegen extends BasePage {
      * CREATE/UPDATE: Submit leg (legacy - kept for compatibility)
      */
     async submitLeg() {
-        console.log('📤 Submitting leg...');
-        
-        try {
-            // Default to driver/vehicle submit
-            await this.submitLegDriverVehicle();
-            
-        } catch (e) {
-            console.log(`⚠️ Error submitting leg: ${e}`);
-            throw e;
-        }
+        await this.submitLegDriverVehicle();
     }
 
     /**
@@ -374,36 +319,10 @@ export class TrackingPageCodegen extends BasePage {
     async closeLegDialog() {
         console.log('🚪 Closing leg dialog...');
         
-        try {
-            // First try: Close the Update Leg dialog
-            const closeButton = this.page.getByLabel('Update Leg').getByRole('button', { name: 'Close', exact: true }).first();
-            const isVisible = await closeButton.isVisible({ timeout: 2000 }).catch(() => false);
-            
-            if (isVisible) {
-                await closeButton.click();
-                await this.page.waitForTimeout(300);
-                console.log('✅ Leg dialog closed (method 1)');
-                return;
-            }
-        } catch (e) {
-            console.log('⚠️ Method 1 failed, trying alternative...');
-        }
-        
-        try {
-            // Second try: Close any remaining dialogs
-            const confirmClose = this.page.getByRole('button', { name: 'Close', exact: true }).first();
-            const isVisible = await confirmClose.isVisible({ timeout: 2000 }).catch(() => false);
-            
-            if (isVisible) {
-                await confirmClose.click();
-                await this.page.waitForTimeout(300);
-                console.log('✅ Leg dialog closed (method 2)');
-                return;
-            }
-        } catch (e) {
-            console.log('⚠️ Method 2 failed');
-        }
-        
-        console.log('✅ Leg dialog close attempted');
+        const closeButton = this.page.getByLabel('Update Leg').getByRole('button', { name: 'Close', exact: true }).first();
+        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
+        await closeButton.click();
+        await this.page.waitForTimeout(300);
+        console.log('✅ Leg dialog closed');
     }
 }
