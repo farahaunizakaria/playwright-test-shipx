@@ -68,10 +68,11 @@ export class BasePage {
   }
 
   /**
-   * Read the latest booking ID from file
+   * Static method to read the latest booking ID from file
+   * Can be called without creating an instance
    * @returns The booking ID or null if file doesn't exist
    */
-  getLatestBookingId(): string | null {
+  static readLatestBookingId(): string | null {
     const filePath = 'latest-booking-id.txt';
     
     if (!existsSync(filePath)) {
@@ -87,6 +88,14 @@ export class BasePage {
       console.error(`❌ Error reading booking ID: ${error}`);
       return null;
     }
+  }
+
+  /**
+   * Read the latest booking ID from file
+   * @returns The booking ID or null if file doesn't exist
+   */
+  getLatestBookingId(): string | null {
+    return BasePage.readLatestBookingId();
   }
 
   /**

@@ -280,7 +280,7 @@ export class TrackingPageCodegen extends BasePage {
         try {
             // Look for submit button inside modal (after driver/vehicle assignment)
             const modal = this.page.locator('.ant-modal-wrap .ant-modal-content');
-            const submitButton = modal.getByRole('button').filter({ hasText: /submit/i }).first();
+            const submitButton = modal.locator('#edit-leg-form-submit-button');
             const isVisible = await submitButton.isVisible({ timeout: 2000 }).catch(() => false);
             
             if (isVisible) {
