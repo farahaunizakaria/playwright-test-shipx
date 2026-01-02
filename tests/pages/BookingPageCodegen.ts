@@ -77,6 +77,7 @@ export class BookingPageCodegen {
         // Click "New Booking" button
         console.log('1️⃣ Clicking "New Booking"...');
         await this.page.getByRole('link', { name: 'plus New Booking' }).click();
+        //await this.page.locator('button:has(a#create-booking-button)').click()
         await this.page.waitForLoadState('domcontentloaded');
         
         // Close any open dropdowns or modals from previous tests
@@ -90,56 +91,42 @@ export class BookingPageCodegen {
         
         // Billing Customer
         console.log('   - Billing Customer...');
-        //await this.page.locator('.ant-select-selection-search').first().click();
-        //await this.page.locator('#billing-customer-selector').click();
-        await this.page.locator('#billing-customer-selector .ant-select-selector').click();
-        await this.page.waitForTimeout(600);
+        await this.page.locator('#billing-customer-selector').click();
+        await this.page.waitForTimeout(300);
         await this.selectDropdownOption(data.billingCustomer);
         
         // Booking Type
         console.log('   - Booking Type...');
-        await this.page.locator('div').filter({ hasText: /^Select booking type\.\.\.$/}).nth(3).click();
-        await this.page.waitForTimeout(600);
+        await this.page.locator('#form-bookingTypes-selector').click();
+        await this.page.waitForTimeout(300);
         await this.selectDropdownOption(data.bookingType);
         
         // Department
         console.log('   - Department...');
-        await this.page.locator('div:nth-child(2) > div > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
+        //await this.page.locator('div:nth-child(2) > div > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
+        await this.page.locator('[id="details\\.departments"]').click() 
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.department);
         
         // Shipper Ref
         console.log('   - Shipper Ref...');
-        await this.page.locator('[id="details.shipperRef"]').click();
-        await this.page.locator('[id="details.shipperRef"]').fill(data.shipperRef);
+        await this.page.locator('[id="details\\.shipperRef"]').click();
+        await this.page.locator('[id="details\\.shipperRef"]').fill(data.shipperRef);
         
         // Customer Ref
         console.log('   - Customer Ref...');
         await this.page.locator('[id="details.customerRef"]').click();
         await this.page.locator('[id="details.customerRef"]').fill(data.customerRef);
         
-        // Remarks - try multiple selectors for flexibility
+        // Remarks
         console.log('   - Remarks...');
-        let remarksField = this.page.getByRole('textbox', { name: 'Remarks:' });
-        let isVisible = await remarksField.isVisible({ timeout: 1000 }).catch(() => false);
-        
-        if (!isVisible) {
-            // Fallback: Try to find textarea or input near "Remarks" label
-            remarksField = this.page.locator('[id*="remarks"]').first();
-            isVisible = await remarksField.isVisible({ timeout: 1000 }).catch(() => false);
-        }
-        
-        if (isVisible) {
-            await remarksField.click();
-            await remarksField.fill(data.remarks);
-            console.log('   ✅ Remarks filled');
-        } else {
-            console.log('   ⚠️ Remarks field not found, skipping...');
-        }
+        await this.page.locator('#remarks[placeholder="Enter text"]').click();
+        await this.page.locator('#remarks[placeholder="Enter text"]').fill(data.remarks);
         
         // Load Type
         console.log('   - Load Type...');
-        await this.page.locator('div:nth-child(7) > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').click();
+        //await this.page.locator('div:nth-child(7) > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').click();
+        await this.page.locator('[id="details\\.loadType"]').click() 
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.loadType);
         
@@ -155,7 +142,8 @@ export class BookingPageCodegen {
         
         // Quotation
         console.log('   - Quotation...');
-        await this.page.locator('div:nth-child(10) > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').click();
+        //await this.page.locator('div:nth-child(10) > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').click();
+        await this.page.locator('[id="details.quotation uuid"]').click() 
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.quotation);
         
@@ -169,45 +157,56 @@ export class BookingPageCodegen {
         console.log('3️⃣ Step 2: Job Details');
         
         // Job Type - Wait for it to be actually visible before clicking
-        console.log('   - Job Type...');
-        const jobTypeField = this.page.locator('div').filter({ hasText: /^Select job type\.\.\.$/ }).nth(3);
-        await jobTypeField.waitFor({ state: 'visible', timeout: 10000 });
-        await jobTypeField.click();
-        await this.page.waitForTimeout(500);
-        
-        // Select DOMESTIC option from the dropdown
-        await this.page.locator('div').filter({ hasText: /^DOMESTIC$/ }).nth(1).click();
-        await this.page.waitForTimeout(500);
-        console.log('   ✅ Job Type: DOMESTIC selected');
-        
-        // Measurement Type (click "None" first)
-        console.log('   - Measurement Type...');
-        await this.page.locator('div').filter({ hasText: /^None$/ }).nth(3).click(); // Click "None" first to deselect
+        await this.page.locator('#type').click();
         await this.page.waitForTimeout(300);
-        await this.page.getByTitle(data.measurementType).click(); // Then select desired type
+        await this.selectDropdownOption(data.jobType);
         
-        // Quantity
-        console.log('   - Quantity...');
-        await this.page.getByRole('textbox', { name: 'Enter text' }).click();
-        await this.page.getByRole('textbox', { name: 'Enter text' }).fill(data.quantity);
+        // Trip Order Format
+        console.log('   - Trip Format...')
+        await this.page.locator('#tripFormat').click();
+        await this.page.waitForTimeout(300);
+        await this.selectDropdownOption(data.tripFormat);
         
+        // Unit/Measurement Unit - Wait for dynamic fields to render after job type selection
+        console.log('   - Unit/Measurement Unit...');
+        await this.page.waitForTimeout(1200); // Wait for dynamic fields
+        
+        // Try measurementUnit first (like JobTrip.ts does)
+        const measurementUnitField = this.page.locator('#measurementUnit');
+        const unitField = this.page.locator('#unit');
+        
+        try {
+            if (await measurementUnitField.isVisible({ timeout: 1000 })) {
+                await measurementUnitField.click();
+                await measurementUnitField.fill(data.unit);
+                console.log('   ✓ Measurement Unit filled');
+            } else if (await unitField.isVisible({ timeout: 1000 })) {
+                await unitField.click();
+                await unitField.fill(data.unit);
+                console.log('   ✓ Unit filled');
+            }
+        } catch (e) {
+            console.log('   ⚠ Unit field not found (may not be required for this job type)');
+        }
+
         // UOM
         console.log('   - UOM...');
-        await this.page.locator('#details-uom').click();
+        await this.page.locator('#uom').click();
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.uom);
         
-        // From Company
+        // From Company (Trip #1)
         console.log('   - From Company...');
-        await this.page.locator('.ant-select.ant-select-outlined.ant-select-in-form-item > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
+        await this.page.locator('#trips-0-from-company-selector').click();
+        await this.page.waitForTimeout(300);
         await this.selectDropdownOption(data.fromCompany, 1500);
-        await this.page.waitForTimeout(300);
+        await this.page.waitForTimeout(800); // Wait for address auto-fill to complete
         
-        // To Company
+        // To Company (Trip #1)
         console.log('   - To Company...');
-        await this.page.locator('div:nth-child(2) > div > .ant-row > .ant-col.ant-col-18 > .ant-form-item-control-input > .ant-form-item-control-input-content > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
+        await this.page.locator('#trips-0-to-company-selector').click();
+        await this.page.waitForTimeout(600); // Wait for dropdown to load
         await this.selectDropdownOption(data.toCompany, 1500);
-        await this.page.waitForTimeout(300);
         
         // Wait for Next button to become enabled (form validation complete)
         console.log('   - Waiting for form validation...');
@@ -225,7 +224,13 @@ export class BookingPageCodegen {
         
         // Click Next to go to Step 3 (from Step 2 Job Details to Step 3 Confirmation)
         console.log('   - Clicking Next to go to Step 3...');
-        await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
+        
+        // Additional wait for form validation to complete
+        await this.page.waitForTimeout(1500);
+        
+        // Multiple buttons have the same ID, use getByRole with nth to target the correct one
+        //await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
+        await this.page.locator('#create-booking-stepper-button:visible').first().click()
         await this.page.waitForLoadState('domcontentloaded');
         await this.page.waitForTimeout(1000);
         
@@ -245,7 +250,6 @@ export class BookingPageCodegen {
     }
 
     /**
-     * FOR TRACKING OPERATIONS: TO TEST TO ANOTHER FLOW USING CREATED BOOKING ID
      * Extract booking ID from the URL after submission
      * @returns The booking ID extracted from the URL, or empty string if not found
      */

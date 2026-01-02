@@ -1,7 +1,7 @@
 import { test, expect } from '../fixtures/fixtures';
 import { BookingPageCodegen } from '../pages/BookingPageCodegen';
 import { BookingData } from '../data/BookingData';
-import { writeFileSync } from 'fs'; //automate booking ID from created booking to update leg test using .txt file
+import { BasePage } from '../pages/BasePage';
 
 //TEST 2: CREATE JOB BOOKING
 test.describe('Create Booking', () => {
@@ -25,8 +25,8 @@ test.describe('Create Booking', () => {
       references: 'Manual Testing 9/12',
       quotation: 'dev_4D7Z21f4B',
       jobType: 'DOMESTIC',
-      measurementType: 'Linear',
-      quantity: 'km',
+      tripFormat: 'Linear',
+      unit: 'km',
       uom: 'TRIP',
       fromCompany: '- Another Base Company Testing',
       toCompany: '- Another Base Company Testing',
@@ -58,9 +58,9 @@ test.describe('Create Booking', () => {
       customerSo: `1001-${timestamp}`,
       references: `Automated Testing ${new Date().toISOString()}`,
       quotation: 'dev_4D7Z21f4B',
-      jobType: 'DOMESTIC',
-      measurementType: 'Linear',
-      quantity: 'km',
+      jobType: 'LOCAL',
+      tripFormat: 'Linear',
+      unit: 'km',
       uom: 'TRIP',
       fromCompany: '1234567 - Another Base Company Testing',
       toCompany: '1234567 - Another Base Company Testing',
@@ -73,9 +73,9 @@ test.describe('Create Booking', () => {
     
     // Extract booking ID (already redirected to booking page)
     //To verify the booking was created (not "new")
-    //booking id not been used in Test#3
+    //Save for use in other tests (e.g., tracking/update-leg tests)
     const bookingId = await bookingPage.getBookingIdFromUrl();
-    writeFileSync('latest-booking-id.txt', bookingId, 'utf-8'); 
+    BasePage.saveLatestBookingId(bookingId);
     
     console.log(`✅ Dynamic booking submitted with ref: ${bookingData.shipperRef}, ID: ${bookingId}`);
     console.log(`🔗 Booking URL: /bookings/${bookingId}`); 
@@ -104,8 +104,8 @@ test.describe('Create Booking', () => {
       references: `Test run ${new Date().toISOString()}`,
       quotation: 'dev_Vwhf8d947',
       jobType: 'DOMESTIC',
-      measurementType: 'Linear',
-      quantity: 'km',
+      tripFormat: 'Linear',
+      unit: 'km',
       uom: 'TRIP',
       fromCompany: '30050 - TOTAL ENERGIES',
       toCompany: '30050 - TOTAL ENERGIES',

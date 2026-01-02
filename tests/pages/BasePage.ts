@@ -1,5 +1,4 @@
 import { Page, Locator } from '@playwright/test';
-import { readFileSync, existsSync } from 'fs';
 
 /**
  * BasePage class contains common resuable methods and properties
@@ -7,6 +6,11 @@ import { readFileSync, existsSync } from 'fs';
  */
 export class BasePage {
   readonly page: Page;
+  
+  // Static property to store the latest booking ID across test instances
+  // Current value: To view/modify, access via BasePage.readLatestBookingId() or set via BasePage.saveLatestBookingId('YOUR_ID')
+  private static latestBookingId: string | null = null; 
+  //private static latestBookingId: string | null = null = '_SEID260004'
 
   constructor(page: Page) {
     this.page = page;
@@ -68,38 +72,48 @@ export class BasePage {
   }
 
   /**
-   * Static method to read the latest booking ID from file
+   * Static method to save booking ID in memory
    * Can be called without creating an instance
-   * @returns The booking ID or null if file doesn't exist
+   * @param bookingId - The booking ID to save
    */
-  static readLatestBookingId(): string | null {
-    const filePath = 'latest-booking-id.txt';
-    
-    if (!existsSync(filePath)) {
-      console.warn('⚠️ latest-booking-id.txt not found');
-      return null;
-    }
-
-    try {
-      const bookingId = readFileSync(filePath, 'utf-8').trim();
-      console.log(`📋 Read booking ID from file: ${bookingId}`);
-      return bookingId;
-    } catch (error) {
-      console.error(`❌ Error reading booking ID: ${error}`);
-      return null;
-    }
+  static saveLatestBookingId(bookingId: string): void {
+    BasePage.latestBookingId = bookingId;
+    console.log(`💾 Saved booking ID: ${bookingId}`);
   }
 
   /**
-   * Read the latest booking ID from file
-   * @returns The booking ID or null if file doesn't exist
+   * Static method to read the latest booking ID from memory
+   * Can be called without creating an instance
+   * @returns The booking ID or null if not set
+   */
+  static readLatestBookingId(): string | null {
+    if (!BasePage.latestBookingId) {
+      console.warn('⚠️ No booking ID found in memory');
+      return null;
+    }
+    
+    console.log(`📋 Retrieved booking ID: ${BasePage.latestBookingId}`);
+    return BasePage.latestBookingId;
+  }
+
+  /**
+   * Save booking ID to memory
+   * @param bookingId - The booking ID to save
+   */
+  saveLatestBookingId(bookingId: string): void {
+    BasePage.saveLatestBookingId(bookingId);
+  }
+
+  /**
+   * Read the latest booking ID from memory
+   * @returns The booking ID or null if not set
    */
   getLatestBookingId(): string | null {
     return BasePage.readLatestBookingId();
   }
 
   /**
-   * Navigate to a booking by ID from the latest-booking-id.txt file
+   * Navigate to a booking by ID from memory
    */
   async navigateToLatestBooking() {
     const bookingId = this.getLatestBookingId();

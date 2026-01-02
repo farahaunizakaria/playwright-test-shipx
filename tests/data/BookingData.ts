@@ -14,8 +14,8 @@ export interface BookingData {
     references: string;
     quotation: string;
     jobType: string;
-    measurementType: string;
-    quantity: string;
+    tripFormat: string;
+    unit: string;
     uom: string;
     fromCompany: string;
     toCompany: string;

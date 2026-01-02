@@ -26,8 +26,8 @@ export interface LegData extends LegTimelineData, LegAssignmentData {
 
 export interface JobData {
     jobType: string;           // e.g., "DOMESTIC"
-    measurementType: string;   // e.g., "Linear"
-    quantity: string;          // e.g., "km"
+    tripFormat: string;   // e.g., "Linear"
+    unit: string;          // e.g., "km"
     uom: string;              // e.g., "TRIP"
     remarks?: string;
 }
