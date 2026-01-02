@@ -43,7 +43,7 @@ test.describe('Create Booking', () => {
     const bookingPage = new BookingPageCodegen(authenticatedPage);
     
     //Test #2
-    // Generate unique identifiers for this test run
+
     // making one job and no trip to see performance flow
     const timestamp = new Date().getTime();
 
@@ -58,7 +58,8 @@ test.describe('Create Booking', () => {
       customerSo: `1001-${timestamp}`,
       references: `Automated Testing ${new Date().toISOString()}`,
       quotation: 'dev_4D7Z21f4B',
-      jobType: 'LOCAL',
+      jobType: 'DOMESTIC',
+      //jobType: 'LOCAL' makes booking passed but not appearing in list in dashboard
       tripFormat: 'Linear',
       unit: 'km',
       uom: 'TRIP',
@@ -72,15 +73,12 @@ test.describe('Create Booking', () => {
     await bookingPage.submitBooking();
     
     // Extract booking ID (already redirected to booking page)
-    //To verify the booking was created (not "new")
     //Save for use in other tests (e.g., tracking/update-leg tests)
     const bookingId = await bookingPage.getBookingIdFromUrl();
     BasePage.saveLatestBookingId(bookingId);
     
     console.log(`✅ Dynamic booking submitted with ref: ${bookingData.shipperRef}, ID: ${bookingId}`);
     console.log(`🔗 Booking URL: /bookings/${bookingId}`); 
-    
-    // purpose: test full booking creation and submission flow with dynamic data
   });
 
   test('should create booking with one additional trip (1 Job, 2 Trips)', async ({ authenticatedPage }) => {
@@ -89,7 +87,6 @@ test.describe('Create Booking', () => {
     const timestamp = new Date().getTime();
 
     //Test #3
-    //use dynamic data 
     // to test job booking with trips
     // Step 1: Create base booking with Job #1, Trip #1
     const bookingData: BookingData = {
@@ -125,8 +122,6 @@ test.describe('Create Booking', () => {
     await bookingPage.submitBooking();
 
     // Step 5: Extract booking ID from page
-    // To confirm booking was created (URL changed from /bookings/new to /bookings/{id})
-    // To log which booking was created
     const bookingId = await bookingPage.getBookingIdFromUrl();
     
     console.log(`✅ Booking created with ID: ${bookingId}`);
