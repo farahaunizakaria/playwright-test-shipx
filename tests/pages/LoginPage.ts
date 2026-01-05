@@ -70,9 +70,6 @@ export class LoginPage extends BasePage {
     
     console.log(`Attempting to select company: "${companyName}"`);
     
-    // The company selection UI shows parent companies and their sub-companies
-    // Based on codegen: need to click parent first, then the specific company
-    
     try {
       // Extract the base company name (without "Testing" suffix if present)
       // E.g., "Another Base Company Testing" -> look for "Another Base Company" first

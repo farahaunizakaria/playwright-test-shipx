@@ -14,17 +14,12 @@ export class BookingPageCodegen {
     }
 
     /**
-     * Helper to select dropdown option from VISIBLE dropdown only
-     * Scopes to the currently open dropdown to avoid selecting from hidden ones
+     * Helper to select dropdown option from visible dropdown only
      */
     private async selectDropdownOption(value: string, waitTime: number = 600) {
-        // Wait for dropdown options to load
         await this.page.waitForTimeout(waitTime);
         
         const result = await this.page.evaluate((optionText) => {
-            // Find the visible dropdown (not hidden)
-            //issue #1: dropdown not visible, data unavailable
-            //issue #2: multiple dropdowns open, not selecting & not selecting the correct one
             const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
             
             if (!visibleDropdown) {
@@ -69,21 +64,17 @@ export class BookingPageCodegen {
     }
 
     /**
-     * Create a new booking using proven selectors from actual codegen
+     * Create a new booking (Steps 1 & 2)
      */
     async createBooking(data: BookingData) {
         console.log('📋 Starting booking creation...');
         
-        // Click "New Booking" button
         console.log('1️⃣ Clicking "New Booking"...');
         await this.page.getByRole('link', { name: 'plus New Booking' }).click();
-        //await this.page.locator('button:has(a#create-booking-button)').click()
         await this.page.waitForLoadState('domcontentloaded');
         
-        // Close any open dropdowns or modals from previous tests
-        //issue #1: page not closed, test detects dropdown on main dashboard instead billing customer dropdown
-        //issue #2: elements intercepts pointer events
-        await this.page.keyboard.press('Escape'); // resets any ui elements before moving to another test
+        // Reset any open UI elements from previous interactions
+        await this.page.keyboard.press('Escape');
         await this.page.waitForTimeout(300);
         
         // ========== STEP 1: BOOKING DETAILS ==========
@@ -103,7 +94,6 @@ export class BookingPageCodegen {
         
         // Department
         console.log('   - Department...');
-        //await this.page.locator('div:nth-child(2) > div > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').first().click();
         await this.page.locator('[id="details\\.departments"]').click() 
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.department);
@@ -125,7 +115,6 @@ export class BookingPageCodegen {
         
         // Load Type
         console.log('   - Load Type...');
-        //await this.page.locator('div:nth-child(7) > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').click();
         await this.page.locator('[id="details\\.loadType"]').click() 
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.loadType);
@@ -142,7 +131,6 @@ export class BookingPageCodegen {
         
         // Quotation
         console.log('   - Quotation...');
-        //await this.page.locator('div:nth-child(10) > .ant-col.ant-col-18 > .ant-form-item-control > .ant-form-item-children > .ant-select > .ant-select-selector > .ant-select-selection-wrap > .ant-select-selection-search').click();
         await this.page.locator('[id="details.quotation uuid"]').click() 
         await this.page.waitForTimeout(600);
         await this.selectDropdownOption(data.quotation);
@@ -167,11 +155,10 @@ export class BookingPageCodegen {
         await this.page.waitForTimeout(300);
         await this.selectDropdownOption(data.tripFormat);
         
-        // Unit/Measurement Unit - Wait for dynamic fields to render after job type selection
+        // Unit/Measurement Unit (dynamic field based on job type)
         console.log('   - Unit/Measurement Unit...');
-        await this.page.waitForTimeout(1200); // Wait for dynamic fields
+        await this.page.waitForTimeout(1200);
         
-        // Try measurementUnit first (like JobTrip.ts does)
         const measurementUnitField = this.page.locator('#measurementUnit');
         const unitField = this.page.locator('#unit');
         
@@ -208,24 +195,20 @@ export class BookingPageCodegen {
         await this.page.waitForTimeout(600); // Wait for dropdown to load
         await this.selectDropdownOption(data.toCompany, 1500);
         
-        // Wait for Next button to become enabled (form validation complete)
+        // Wait for form validation
         console.log('   - Waiting for form validation...');
-        await this.page.waitForTimeout(2000); // Increase wait for React to validate form
+        await this.page.waitForTimeout(2000);
         
         console.log('✅ BOOKING FORM COMPLETED - Ready to submit');
     }
 
     /**
-     * Submit booking after adding jobs/trips
-     * Use this after calling createBooking() and adding any additional jobs/trips
+     * Submit booking (Step 3)
      */
     async submitBooking() {
         console.log('📤 Submitting booking...');
-        
-        // Click Next to go to Step 3 (from Step 2 Job Details to Step 3 Confirmation)
         console.log('   - Clicking Next to go to Step 3...');
         
-        // Additional wait for form validation to complete
         await this.page.waitForTimeout(1500);
         
         // Multiple buttons have the same ID, use getByRole with nth to target the correct one
@@ -250,33 +233,26 @@ export class BookingPageCodegen {
     }
 
     /**
-     * Extract booking ID from the URL after submission
-     * @returns The booking ID extracted from the URL, or empty string if not found
+     * Extract booking ID from URL after submission
      */
     async getBookingIdFromUrl(): Promise<string> {
-        // Wait for URL to update after submission redirect
         await this.page.waitForTimeout(1000);
         
         const url = this.page.url();
         const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1];
         
-        // Filter out 'new' as it's the creation page, not a real booking ID
         if (bookingId && bookingId !== 'new') {
             console.log(`📋 ✅ Extracted booking ID from URL: ${bookingId}`);
             return bookingId;
         }
         
-        // Extraction failed - log for debugging
         console.warn('⚠️ Could not extract booking ID from URL:', url);
         return '';
     }
 
     /**
-     * TEST #3:
      * Add a new trip to the current job
-     * Automatically handles clicking the trip add button and selecting From/To companies
-     * @param fromCompanyIndex Index of the company to select in the From dropdown (default: 0 = first option)
-     * @param toCompanyIndex Index of the company to select in the To dropdown (default: 0 = first option)
+     * @param toCompanyIndex Index of the company to select in To Company dropdown
      */
     async addTrip(fromCompanyIndex: number = 0, toCompanyIndex: number = 0) {
         console.log('➕ Adding new trip...');
@@ -329,18 +305,4 @@ export class BookingPageCodegen {
         await tripRemarksField.fill(remarks);
     }
 
-    /**
-     * Navigate to a booking by ID and verify it loads successfully
-     * Useful for verifying data persistence after submission
-     * @param bookingId The booking ID to navigate to
-     */
-    async verifyBookingExists(bookingId: string) {
-        console.log(`🔍 Navigating to booking: ${bookingId}`);
-        
-        await this.page.goto(`/bookings/${bookingId}`);
-        await this.page.waitForLoadState('domcontentloaded');
-        await this.page.waitForTimeout(1000);
-        
-        console.log('✅ Booking page loaded');
-    }
 }

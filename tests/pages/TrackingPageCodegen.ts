@@ -10,7 +10,7 @@ export class TrackingPageCodegen extends BasePage {
     }
 
     /**
-     * Helper to select dropdown option from VISIBLE dropdown only
+     * HELPER to select dropdown option from VISIBLE dropdown only
      * Uses Playwright locator with hasText filter for accurate matching
      */
     private async selectDropdownOption(value: string, waitTime: number = 600) {
@@ -182,7 +182,8 @@ export class TrackingPageCodegen extends BasePage {
         
         // Click the first leg row button in the table
         console.log('  • Clicking first leg in table...');
-        await this.page.locator('table').getByRole('button').first().click();
+        //await this.page.locator('table').getByRole('button').first().click();
+        await this.page.locator('#job-trip-legs-row-0 button[type="link"]').first().click();
         await this.page.waitForTimeout(2000);
         
         // Wait for modal to appear
@@ -197,57 +198,29 @@ export class TrackingPageCodegen extends BasePage {
     async assignLegResources(legData: LegData) {
         console.log('Assigning driver and vehicle...');
         
-        // The modal is already open (Ant Design modal)
-        const modal = this.page.locator('.ant-modal-wrap .ant-modal-content');
+        const modal = this.page.locator('[role="dialog"]');
         
-        // Assign Driver by ID
+        // Assign Driver
         if (legData.driver) {
             console.log(`DRIVER ASSIGNMENT: ${legData.driver}`);
             
-            const driverField = modal.locator('#driverUuid');
-            
-            // Wait for field to be ready
-            await driverField.waitFor({ state: 'visible', timeout: 5000 });
-            console.log(`Clicking driver field (#driverUuid)...`);
-            await driverField.click();
-            
-            // Wait for dropdown to actually appear
-            const dropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
-            await dropdown.waitFor({ state: 'visible', timeout: 5000 });
-            console.log(`Dropdown visible: true`);
-            
-            console.log(`Selecting option: "${legData.driver}"`);
+            //await modal.locator('#driver-leg-form-selector').click();
+            await modal.locator('#driverUuid').click();
+            await this.page.waitForTimeout(300);
             await this.selectDropdownOption(legData.driver);
-            
-            // Verify selection by waiting for dropdown to close
-            await dropdown.waitFor({ state: 'hidden', timeout: 5000 });
             console.log(`Driver assignment complete`);
         }
 
-        // Wait between assignments
         await this.page.waitForTimeout(500);
 
-        // Assign Vehicle by ID
+        // Assign Vehicle
         if (legData.vehicle) {
             console.log(`VEHICLE ASSIGNMENT: ${legData.vehicle}`);
             
-            const vehicleField = modal.locator('#vehicleUuid');
-            
-            // Wait for field to be ready
-            await vehicleField.waitFor({ state: 'visible', timeout: 5000 });
-            console.log(`Clicking vehicle field (#vehicleUuid)...`);
-            await vehicleField.click();
-            
-            // Wait for dropdown to actually appear
-            const dropdown = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
-            await dropdown.waitFor({ state: 'visible', timeout: 5000 });
-            console.log(`Dropdown visible: true`);
-            
-            console.log(`Selecting option: "${legData.vehicle}"`);
+            await modal.locator('#vehicleUuid').click();
+            //await modal.locator('#vehicle-leg-form-selector').click();
+            await this.page.waitForTimeout(300);
             await this.selectDropdownOption(legData.vehicle);
-            
-            // Verify selection by waiting for dropdown to close
-            await dropdown.waitFor({ state: 'hidden', timeout: 5000 });
             console.log(`Vehicle assignment complete`);
         }
 
@@ -312,66 +285,6 @@ export class TrackingPageCodegen extends BasePage {
         await submitButton.click();
         await this.page.waitForTimeout(1000);
         console.log('✅ Driver/Vehicle submitted');
-    }
-
-    /**
-     * Submit leg final (top-right submit button after all timeline updates)
-     */
-    async submitLegFinal() {
-        console.log('📤 Submitting leg (final - top right)...');
-        
-        try {
-            // Look for the top-right submit button in modal footer/header
-            const modal = this.page.locator('.ant-modal-wrap .ant-modal-content');
-            
-            // Try to find in modal header (top right area)
-            let submitButton = modal.locator('.ant-modal-header').getByRole('button').filter({ hasText: /submit/i }).first();
-            let isVisible = await submitButton.isVisible({ timeout: 1500 }).catch(() => false);
-            
-            if (isVisible) {
-                await submitButton.click();
-                await this.page.waitForTimeout(1000);
-                console.log('✅ Leg final submitted (header button)');
-                return;
-            }
-
-            // Try to find in modal footer
-            submitButton = modal.locator('.ant-modal-footer').getByRole('button').filter({ hasText: /submit/i }).first();
-            isVisible = await submitButton.isVisible({ timeout: 1500 }).catch(() => false);
-            
-            if (isVisible) {
-                await submitButton.click();
-                await this.page.waitForTimeout(1000);
-                console.log('✅ Leg final submitted (footer button)');
-                return;
-            }
-
-            // Fallback: find any submit button in modal
-            submitButton = modal.getByRole('button').filter({ hasText: /submit/i }).first();
-            isVisible = await submitButton.isVisible({ timeout: 1500 }).catch(() => false);
-            
-            if (isVisible) {
-                const text = await submitButton.textContent();
-                await submitButton.click();
-                await this.page.waitForTimeout(1000);
-                console.log(`✅ Leg final submitted (${text})`);
-                return;
-            }
-
-            console.log('⚠️ Final submit button not found');
-            await this.page.screenshot({ path: 'final-submit-button-not-visible.png' });
-            
-        } catch (e) {
-            console.log(`⚠️ Error on final submit: ${e}`);
-            throw e;
-        }
-    }
-
-    /**
-     * CREATE/UPDATE: Submit leg (legacy - kept for compatibility)
-     */
-    async submitLeg() {
-        await this.submitLegDriverVehicle();
     }
 
     /**

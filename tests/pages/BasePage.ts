@@ -8,10 +8,8 @@ export class BasePage {
   readonly page: Page;
   
   // Static property to store the latest booking ID across test instances
-  // Current value: To view/modify, access via BasePage.readLatestBookingId() or set via BasePage.saveLatestBookingId('YOUR_ID')
-  private static latestBookingId: string | null = null; 
-  //private static latestBookingId: string | null = null = '_SEID260004'
-
+  // ⚠️ AUTO-UPDATED by test runs - modify the value below to test with a specific booking
+  private static latestBookingId: string | null = '_SEID260036'; // Last updated: 2026-01-05 // Last updated: 2026-01-05 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02
   constructor(page: Page) {
     this.page = page;
   }
@@ -72,13 +70,42 @@ export class BasePage {
   }
 
   /**
-   * Static method to save booking ID in memory
+   * Static method to save booking ID in memory AND update the source file
    * Can be called without creating an instance
    * @param bookingId - The booking ID to save
    */
   static saveLatestBookingId(bookingId: string): void {
     BasePage.latestBookingId = bookingId;
     console.log(`💾 Saved booking ID: ${bookingId}`);
+    
+    // Auto-update the source file with the new booking ID
+    BasePage.updateSourceFile(bookingId);
+  }
+  
+  /**
+   * Update BasePage.ts source file with the latest booking ID
+   * This allows update-leg.spec.ts to run independently
+   */
+  private static updateSourceFile(bookingId: string): void {
+    try {
+      const fs = require('fs');
+      const path = require('path');
+      const filePath = path.join(__dirname, 'BasePage.ts');
+      
+      let content = fs.readFileSync(filePath, 'utf-8');
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Replace the latestBookingId line (matches empty string, null, or any booking ID)
+      const pattern = /private static latestBookingId: string \| null = (?:'[^']*'|null|'');/;
+      const replacement = `private static latestBookingId: string | null = '${bookingId}'; // Last updated: ${today}`;
+      
+      content = content.replace(pattern, replacement);
+      fs.writeFileSync(filePath, content, 'utf-8');
+      
+      console.log(`✏️ Auto-updated BasePage.ts with booking ID: ${bookingId}`);
+    } catch (error) {
+      console.warn(`⚠️ Could not auto-update BasePage.ts:`, error);
+    }
   }
 
   /**

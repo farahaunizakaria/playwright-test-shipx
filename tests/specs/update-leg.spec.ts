@@ -8,6 +8,7 @@ test.describe('Update Leg', () => {
     
     // Test data for leg update
     const legTestData: LegData = {
+        //transporter: 'Another Base Company Testing',
         driver: 'Aeril - Aakhif Aeril',  // Using actual driver from system
         vehicle: 'ABC001 - ABC001',      // Using actual vehicle from system
         planStart: false,               // Auto-set when driver/vehicle submitted, skip manual update
@@ -49,7 +50,7 @@ test.describe('Update Leg', () => {
         
         // Assign driver and vehicle, then submit
         await trackingPage.assignLegResources(legTestData);
-        await trackingPage.submitLeg();
+        await trackingPage.submitLegDriverVehicle();
         
         // Close Update Leg modal, sync Trip modal, and reopen for timeline updates
         await trackingPage.closeUpdateLegModal();
