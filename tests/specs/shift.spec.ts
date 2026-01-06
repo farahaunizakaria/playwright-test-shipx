@@ -1,8 +1,9 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { LoginPage } from '../pages/LoginPage';
 import { ShiftPage } from '../pages/ShiftPage';
 
-//TEST 5: TEST SHIFT CREATION WITH INCENTIVE, APPROVAL AND CANCELLATION
+const INCENTIVE_TYPE = 'INC0100 - JOB INCENTIVE';
+
 test.describe('Shift Management Tests (Independent)', () => {
   let loginPage: LoginPage;
   let shiftPage: ShiftPage;
@@ -27,24 +28,13 @@ test.describe('Shift Management Tests (Independent)', () => {
     const shiftData = {
       driver: 'Alexandre - Alexandre',
       vehicle: 'TRN3202C - TRN3202C',
-      shiftDate: '22',
-      remarks: 'Automated Testing 22/12',
+      shiftDate: '05',
+      remarks: 'Automated Testing 06/1',
     };
 
     await shiftPage.createShift(shiftData);
-
-    // Add incentive
-    const incentiveData = {
-      incentiveType: 'INC0100 - JOB INCENTIVE',
-      amount: 50,
-    };
-
-    await shiftPage.addIncentive(incentiveData);
-    
-    // Close shift before approval
+    await shiftPage.addIncentive({ incentiveType: INCENTIVE_TYPE, amount: 50 });
     await shiftPage.closeShift();
-
-    // Approve the shift
     await shiftPage.approveShift();
 
     console.log('✅ Test passed: Shift created, incentive added, and shift approved');
@@ -53,28 +43,16 @@ test.describe('Shift Management Tests (Independent)', () => {
   test('should create shift, add incentive, close, and cancel shift', async ({ page }) => {
     console.log('📌 Test: Create Shift and Cancel');
 
-    // Create a new shift - using Alek/TRN3202E with date 21 (from codegen)
     const shiftData = {
       driver: 'Alek - Alek',
       vehicle: 'TRN3202E - TRN3202E',
-      shiftDate: '21',
-      remarks: 'Automated Testing Cancel 21/12',
+      shiftDate: '05',
+      remarks: 'Automated Testing Cancel 06/1',
     };
 
     await shiftPage.createShift(shiftData);
-
-    // Add incentive
-    const incentiveData = {
-      incentiveType: 'INC0100 - JOB INCENTIVE',
-      amount: 15,
-    };
-
-    await shiftPage.addIncentive(incentiveData);
-    
-    // Close shift before cancellation
+    await shiftPage.addIncentive({ incentiveType: INCENTIVE_TYPE, amount: 15 });
     await shiftPage.closeShift();
-
-    // Cancel the shift
     await shiftPage.cancelShift();
 
     console.log('✅ Test passed: Shift created and canceled');

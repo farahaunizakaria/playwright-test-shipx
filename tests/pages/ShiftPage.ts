@@ -24,16 +24,66 @@ export class ShiftPage extends BasePage {
     super(page);
   }
 
+  /**
+   * Helper to select dropdown option from visible dropdown only
+   */
+  private async selectDropdownOption(value: string, waitTime: number = 600) {
+    await this.page.waitForTimeout(waitTime);
+    
+    const result = await this.page.evaluate((optionText) => {
+      const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+      
+      if (!visibleDropdown) {
+        return {
+          success: false,
+          searchedFor: optionText,
+          available: [],
+          count: 0,
+          error: 'No visible dropdown found'
+        };
+      }
+      
+      // Only get options from the visible dropdown
+      const options = Array.from(visibleDropdown.querySelectorAll('.ant-select-item-option'));
+      const availableOptions = options.map(o => o.textContent?.trim());
+      
+      const targetOption = options.find(opt => 
+        opt.textContent?.trim().includes(optionText)
+      );
+      
+      if (targetOption) {
+        (targetOption as HTMLElement).click();
+        return { success: true, found: targetOption.textContent?.trim() };
+      } else {
+        return { 
+          success: false, 
+          searchedFor: optionText,
+          available: availableOptions,
+          count: options.length
+        };
+      }
+    }, value);
+    
+    if (!result.success) {
+      console.error(`❌ Dropdown selection failed:`);
+      console.error(`   Searched for: "${result.searchedFor}"`);
+      console.error(`   Found ${result.count} options:`, result.available);
+      throw new Error(`Option "${result.searchedFor}" not found. Available: ${result.available?.join(', ') || 'none'}`);
+    }
+    
+    console.log(`✅ Selected: ${result.found}`);
+  }
+
   async navigateToShifts() {
     console.log('🚗 Navigating to Shifts page...');
     
-    await this.page.getByRole('button', { name: 'Transport down' }).click();
+    await this.page.getByRole('button', { name: /transport/i }).click();
     await this.page.waitForTimeout(500);
     
-    await this.page.getByRole('menuitem', { name: 'Incentives right' }).click();
+    await this.page.getByRole('menuitem', { name: 'Incentives' }).click();
     await this.page.waitForTimeout(500);
     
-    await this.page.getByRole('link', { name: 'Shifts' }).click();
+    await this.page.getByRole('menuitem', { name: 'Shifts' }).click();
     await this.page.waitForTimeout(1000);
     
     console.log('✅ Successfully navigated to Shifts page');
@@ -53,50 +103,47 @@ export class ShiftPage extends BasePage {
   async openShiftCreationModal() {
     console.log('➕ Opening shift creation modal...');
     
-    const createButton = this.page.getByRole('button', { name: 'plus', exact: true });
+    const createButton = this.page.getByRole('button', { name: 'plus', exact: true }); ////no explicit ID available
     await createButton.waitFor({ state: 'visible', timeout: 5000 });
     await createButton.click();
+
+// In create-shift-button.tsx
+// <Tooltip title="Create shift">
+//   <Button 
+//     id="create-shift-button"  // ← Add this ID
+//     shape="circle" 
+//     onClick={toggleModal} 
+//     icon={<PlusOutlined />} 
+//   />
+// </Tooltip>
     
     await this.page.waitForTimeout(800);
+    
     console.log('✅ Shift creation modal opened');
   }
 
   async selectDriver(driverName: string) {
     console.log(`👤 Selecting driver: ${driverName}...`);
     
-    const driverField = this.page.locator('div').filter({ hasText: /^Search a driver\.\.\.$/ }).nth(4);
-    await driverField.waitFor({ state: 'visible', timeout: 5000 });
-    await driverField.click();
     await this.page.waitForTimeout(1000);
     
-    const driverOption = this.page.locator('div').filter({ hasText: new RegExp(`^${driverName}`) }).first();
-    await driverOption.waitFor({ state: 'visible', timeout: 8000 });
-    await driverOption.click();
-    await this.page.waitForTimeout(600);
-    
-    console.log(`✅ Driver selected: ${driverName}`);
+    await this.page.locator('#driverUuid').click();
+    await this.page.waitForTimeout(300);
+    await this.selectDropdownOption(driverName);
   }
 
   async selectVehicle(vehicleCode: string) {
     console.log(`🚙 Selecting vehicle: ${vehicleCode}...`);
     
-    const vehicleField = this.page.locator('div').filter({ hasText: /^Search a vehicle\.\.\.$/ }).nth(4);
-    await vehicleField.waitFor({ state: 'visible', timeout: 5000 });
-    await vehicleField.click();
-    await this.page.waitForTimeout(500);
-    
-    const vehicleOption = this.page.locator('div').filter({ hasText: new RegExp(`^${vehicleCode}`) }).first();
-    await vehicleOption.waitFor({ state: 'visible', timeout: 5000 });
-    await vehicleOption.click();
-    await this.page.waitForTimeout(600);
-    
-    console.log(`✅ Vehicle selected: ${vehicleCode}`);
+    await this.page.locator('#vehicleUuid').click();
+    await this.page.waitForTimeout(300);
+    await this.selectDropdownOption(vehicleCode);
   }
 
   async selectShiftDate(date: string) {
     console.log(`📅 Selecting shift date: ${date}...`);
     
-    const datePicker = this.page.locator('.ant-picker.ant-picker-outlined.css-15nz02x.w-full');
+    const datePicker = this.page.locator('#start');
     await datePicker.waitFor({ state: 'visible', timeout: 5000 });
     await datePicker.click();
     await this.page.waitForTimeout(600);
@@ -119,9 +166,6 @@ export class ShiftPage extends BasePage {
     
     const remarksField = this.page.getByRole('textbox', { name: 'Remarks :' });
     await remarksField.waitFor({ state: 'visible', timeout: 5000 });
-    await remarksField.click();
-    await remarksField.fill('');
-    await this.page.waitForTimeout(300);
     await remarksField.fill(remarks);
     await this.page.waitForTimeout(600);
     
@@ -156,12 +200,9 @@ export class ShiftPage extends BasePage {
     await this.selectShiftDate(shiftData.shiftDate);
     await this.fillRemarks(shiftData.remarks);
     await this.submitShiftForm();
-
-    await this.page.waitForTimeout(2000);
     
-    const updateButton = this.page.getByRole('button', { name: 'Update Shift' });
-    await updateButton.waitFor({ state: 'visible', timeout: 15000 });
-    await this.page.waitForTimeout(1000);
+    const updateDialog = this.page.getByRole('dialog').filter({ hasText: /Update Shift/ });
+    await updateDialog.waitFor({ state: 'visible', timeout: 15000 });
     
     console.log('✅ Shift created successfully');
   }
@@ -169,10 +210,15 @@ export class ShiftPage extends BasePage {
   async addIncentive(incentiveData: IncentiveData) {
     console.log(`💰 Adding incentive: ${incentiveData.incentiveType} (${incentiveData.amount})...`);
     
-    await this.page.locator('.anticon-plus-circle').first().click();
+    //await this.page.locator('.anticon-plus-circle').first().click();
+    await this.page.locator('button:has(.anticon-plus-circle)').click()
     await this.page.waitForTimeout(600);
     
-    const incentiveField = this.page.locator('div').filter({ hasText: /^Search an incentive type\.\.\.$/ }).nth(4);
+    // Scope to the modal dialog to avoid ambiguity
+    const modal = this.page.getByRole('dialog', { name: 'Create Incentive' });  
+
+    //const incentiveField = this.page.locator('div').filter({ hasText: /^Search an incentive type\.\.\.$/ }).nth(4);
+    const incentiveField= modal.locator('#incentive-type-selector');
     await incentiveField.click();
     await this.page.waitForTimeout(500);
     
@@ -180,9 +226,8 @@ export class ShiftPage extends BasePage {
     await incentiveOption.click();
     await this.page.waitForTimeout(600);
     
-    const amountField = this.page.getByRole('spinbutton', { name: '* Amount' });
-    await amountField.click();
-    await amountField.fill(incentiveData.amount.toString());
+    await this.page.locator('#amount').click();
+    await this.page.locator('#amount').fill(incentiveData.amount.toString());
     await this.page.waitForTimeout(600);
     
     await this.page.getByRole('button', { name: 'Submit' }).click();
@@ -194,7 +239,7 @@ export class ShiftPage extends BasePage {
   async closeShift() {
     console.log('🔒 Closing shift...');
     
-    await this.page.getByRole('button', { name: 'Close Shift' }).click();
+    await this.page.getByRole('button', { name: 'Close Shift' }).click(); //no explicit ID available
     await this.page.waitForTimeout(1200);
     
     console.log('✅ Shift closed');
@@ -215,7 +260,6 @@ export class ShiftPage extends BasePage {
   async cancelShift() {
     console.log('❌ Canceling shift...');
     
-    // WORKING: Use span:nth-child(6) from codegen
     await this.page.locator('span:nth-child(6)').click();
     await this.page.waitForTimeout(600);
     
