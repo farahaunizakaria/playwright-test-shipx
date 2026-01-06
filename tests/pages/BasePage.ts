@@ -9,7 +9,7 @@ export class BasePage {
   
   // Static property to store the latest booking ID across test instances
   // ⚠️ AUTO-UPDATED by test runs - modify the value below to test with a specific booking
-  private static latestBookingId: string | null = '_SEID251043'; // Last updated: 2026-01-05 // Last updated: 2026-01-05 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02
+  private static latestBookingId: string | null = '_SEID260048'; // Last updated: 2026-01-06 // Last updated: 2026-01-06 // Last updated: 2026-01-06 // Last updated: 2026-01-06 // Last updated: 2026-01-06 // Last updated: 2026-01-05 // Last updated: 2026-01-05 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02 // Last updated: 2026-01-02
   constructor(page: Page) {
     this.page = page;
   }

@@ -1,5 +1,6 @@
 import { Page } from "@playwright/test";
 import { BookingData } from "../data/BookingData";
+import { DropdownHelper, WaitHelper, ModalHelper } from '../helper';
 
 /**
  * BookingPageCodegen - Page Object Model based on actual Playwright Codegen
@@ -7,61 +8,67 @@ import { BookingData } from "../data/BookingData";
 
 export class BookingPageCodegen {
     readonly page: Page;
+    private dropdownHelper: DropdownHelper;
+    private waitHelper: WaitHelper;
+    private modalHelper: ModalHelper;
 
     //base page playwright ui elements and methods
     constructor(page: Page) {
         this.page = page;
+        this.dropdownHelper = new DropdownHelper(page);
+        this.waitHelper = new WaitHelper(page);
+        this.modalHelper = new ModalHelper(page);
     }
 
     /**
      * Helper to select dropdown option from visible dropdown only
      */
-    private async selectDropdownOption(value: string, waitTime: number = 600) {
-        await this.page.waitForTimeout(waitTime);
+    // private async selectDropdownOption(value: string, waitTime: number = 600) {
+    //     await this.page.waitForTimeout(waitTime);
         
-        const result = await this.page.evaluate((optionText) => {
-            const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+    //     const result = await this.page.evaluate((optionText) => {
+    //         const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
             
-            if (!visibleDropdown) {
-                return {
-                    success: false,
-                    searchedFor: optionText,
-                    available: [],
-                    count: 0,
-                    error: 'No visible dropdown found'
-                };
-            }
+    //         if (!visibleDropdown) {
+    //             return {
+    //                 success: false,
+    //                 searchedFor: optionText,
+    //                 available: [],
+    //                 count: 0,
+    //                 error: 'No visible dropdown found'
+    //             };
+    //         }
             
-            // Only get options from the visible dropdown
-            const options = Array.from(visibleDropdown.querySelectorAll('.ant-select-item-option'));
-            const availableOptions = options.map(o => o.textContent?.trim());
+    //         // Only get options from the visible dropdown
+    //         const options = Array.from(visibleDropdown.querySelectorAll('.ant-select-item-option'));
+    //         const availableOptions = options.map(o => o.textContent?.trim());
             
-            const targetOption = options.find(opt => 
-                opt.textContent?.trim().includes(optionText)
-            );
+    //         const targetOption = options.find(opt => 
+    //             opt.textContent?.trim().includes(optionText)
+    //         );
             
-            if (targetOption) {
-                (targetOption as HTMLElement).click();
-                return { success: true, found: targetOption.textContent?.trim() };
-            } else {
-                return { 
-                    success: false, 
-                    searchedFor: optionText,
-                    available: availableOptions,
-                    count: options.length
-                };
-            }
-        }, value);
+    //         if (targetOption) {
+    //             (targetOption as HTMLElement).click();
+    //             return { success: true, found: targetOption.textContent?.trim() };
+    //         } else {
+    //             return { 
+    //                 success: false, 
+    //                 searchedFor: optionText,
+    //                 available: availableOptions,
+    //                 count: options.length
+    //             };
+    //         }
+    //     }, value);
         
-        if (!result.success) {
-            console.error(`❌ Dropdown selection failed:`);
-            console.error(`   Searched for: "${result.searchedFor}"`);
-            console.error(`   Found ${result.count} options:`, result.available);
-            throw new Error(`Option "${result.searchedFor}" not found. Available: ${result.available?.join(', ') || 'none'}`);
-        }
+    //     if (!result.success) {
+    //         console.error(`❌ Dropdown selection failed:`);
+    //         console.error(`   Searched for: "${result.searchedFor}"`);
+    //         console.error(`   Found ${result.count} options:`, result.available);
+    //         throw new Error(`Option "${result.searchedFor}" not found. Available: ${result.available?.join(', ') || 'none'}`);
+    //     }
         
-        console.log(`✅ Selected: ${result.found}`);
-    }
+    //     console.log(`✅ Selected: ${result.found}`);
+    // }
 
     /**
      * Create a new booking (Steps 1 & 2)
@@ -71,11 +78,11 @@ export class BookingPageCodegen {
         
         console.log('1️⃣ Clicking "New Booking"...');
         await this.page.getByRole('link', { name: 'plus New Booking' }).click();
-        await this.page.waitForLoadState('domcontentloaded');
+        await this.waitHelper.waitForPageLoad('domcontentloaded');
         
         // Reset any open UI elements from previous interactions
         await this.page.keyboard.press('Escape');
-        await this.page.waitForTimeout(300);
+        await this.waitHelper.wait(300);
         
         // ========== STEP 1: BOOKING DETAILS ==========
         console.log('2️⃣ Step 1: Booking Details');
@@ -83,20 +90,20 @@ export class BookingPageCodegen {
         // Billing Customer
         console.log('   - Billing Customer...');
         await this.page.locator('#billing-customer-selector').click();
-        await this.page.waitForTimeout(300);
-        await this.selectDropdownOption(data.billingCustomer);
+        await this.waitHelper.wait(300);
+        await this.dropdownHelper.selectDropdownOption(data.billingCustomer);
         
         // Booking Type
         console.log('   - Booking Type...');
         await this.page.locator('#form-bookingTypes-selector').click();
-        await this.page.waitForTimeout(300);
-        await this.selectDropdownOption(data.bookingType);
+        await this.waitHelper.wait(300);
+        await this.dropdownHelper.selectDropdownOption(data.bookingType);
         
         // Department
         console.log('   - Department...');
         await this.page.locator('[id="details\\.departments"]').click() 
-        await this.page.waitForTimeout(600);
-        await this.selectDropdownOption(data.department);
+        await this.waitHelper.wait(600);
+        await this.dropdownHelper.selectDropdownOption(data.department);
         
         // Shipper Ref
         console.log('   - Shipper Ref...');
@@ -116,8 +123,8 @@ export class BookingPageCodegen {
         // Load Type
         console.log('   - Load Type...');
         await this.page.locator('[id="details\\.loadType"]').click() 
-        await this.page.waitForTimeout(600);
-        await this.selectDropdownOption(data.loadType);
+        await this.waitHelper.wait(600);
+        await this.dropdownHelper.selectDropdownOption(data.loadType);
         
         // Customer SO
         console.log('   - Customer SO...');
@@ -132,32 +139,32 @@ export class BookingPageCodegen {
         // Quotation
         console.log('   - Quotation...');
         await this.page.locator('[id="details.quotation uuid"]').click() 
-        await this.page.waitForTimeout(600);
-        await this.selectDropdownOption(data.quotation);
-        
+        await this.waitHelper.wait(600);
+        await this.dropdownHelper.selectDropdownOption(data.quotation);
+
         // Navigate to Step 2
         console.log('   ✅ Step 1 complete, moving to Step 2...');
         await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
-        await this.page.waitForLoadState('domcontentloaded');
-        await this.page.waitForTimeout(2000); // Wait for Step 2 to render
+        await this.waitHelper.waitForPageLoad('domcontentloaded');
+        await this.waitHelper.wait(2000); // Wait for Step 2 to render
         
         // ========== STEP 2: JOB DETAILS ==========
         console.log('3️⃣ Step 2: Job Details');
         
         // Job Type - Wait for it to be actually visible before clicking
         await this.page.locator('#type').click();
-        await this.page.waitForTimeout(300);
-        await this.selectDropdownOption(data.jobType);
+        await this.waitHelper.wait(300);
+        await this.dropdownHelper.selectDropdownOption(data.jobType);
         
         // Trip Order Format
         console.log('   - Trip Format...')
         await this.page.locator('#tripFormat').click();
-        await this.page.waitForTimeout(300);
-        await this.selectDropdownOption(data.tripFormat);
+        await this.waitHelper.wait(300);
+        await this.dropdownHelper.selectDropdownOption(data.tripFormat);
         
         // Unit/Measurement Unit (dynamic field based on job type)
         console.log('   - Unit/Measurement Unit...');
-        await this.page.waitForTimeout(1200);
+        await this.waitHelper.wait(1200);
         
         const measurementUnitField = this.page.locator('#measurementUnit');
         const unitField = this.page.locator('#unit');
@@ -179,25 +186,25 @@ export class BookingPageCodegen {
         // UOM
         console.log('   - UOM...');
         await this.page.locator('#uom').click();
-        await this.page.waitForTimeout(600);
-        await this.selectDropdownOption(data.uom);
+        await this.waitHelper.wait(600);
+        await this.dropdownHelper.selectDropdownOption(data.uom);
         
         // From Company (Trip #1)
         console.log('   - From Company...');
         await this.page.locator('#trips-0-from-company-selector').click();
-        await this.page.waitForTimeout(300);
-        await this.selectDropdownOption(data.fromCompany, 1500);
-        await this.page.waitForTimeout(800); // Wait for address auto-fill to complete
+        await this.waitHelper.wait(300);
+        await this.dropdownHelper.selectDropdownOption(data.fromCompany);
+        await this.waitHelper.wait(800); // Wait for address auto-fill to complete
         
         // To Company (Trip #1)
         console.log('   - To Company...');
         await this.page.locator('#trips-0-to-company-selector').click();
-        await this.page.waitForTimeout(600); // Wait for dropdown to load
-        await this.selectDropdownOption(data.toCompany, 1500);
+        await this.waitHelper.wait(600); // Wait for dropdown to load
+        await this.dropdownHelper.selectDropdownOption(data.toCompany);
         
         // Wait for form validation
         console.log('   - Waiting for form validation...');
-        await this.page.waitForTimeout(2000);
+        await this.waitHelper.wait(2000);
         
         console.log('✅ BOOKING FORM COMPLETED - Ready to submit');
     }
@@ -209,13 +216,13 @@ export class BookingPageCodegen {
         console.log('📤 Submitting booking...');
         console.log('   - Clicking Next to go to Step 3...');
         
-        await this.page.waitForTimeout(1500);
+        await this.waitHelper.wait(1500);
         
         // Multiple buttons have the same ID, use getByRole with nth to target the correct one
         //await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
         await this.page.locator('#create-booking-stepper-button:visible').first().click()
-        await this.page.waitForLoadState('domcontentloaded');
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.waitForPageLoad('domcontentloaded');
+        await this.waitHelper.wait(1000);
         
         // Check "Override Duplicate Booking" checkbox
         console.log('   - Checking override duplicate booking...');
@@ -226,8 +233,8 @@ export class BookingPageCodegen {
         await this.page.getByRole('button', { name: 'Submit' }).click();
         
         // Wait for redirect to booking detail page
-        await this.page.waitForLoadState('domcontentloaded', { timeout: 10000 });
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.waitForPageLoad('domcontentloaded');
+        await this.waitHelper.wait(1000);
         
         console.log('✅ Booking submitted successfully!');
     }
@@ -236,7 +243,7 @@ export class BookingPageCodegen {
      * Extract booking ID from URL after submission
      */
     async getBookingIdFromUrl(): Promise<string> {
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
         
         const url = this.page.url();
         const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1];
@@ -259,21 +266,21 @@ export class BookingPageCodegen {
         
         // Click the trip add button
         await this.page.locator('#trip-add-button').click();
-        await this.page.waitForTimeout(1000); // Wait for trip to be added
+        await this.waitHelper.wait(1000); // Wait for trip to be added
 
         // Scroll to the new trip to ensure it's visible
         await this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).last().scrollIntoViewIfNeeded();
-        await this.page.waitForTimeout(300);
+        await this.waitHelper.wait(300);
         
         // Click the To Company dropdown (last occurrence of "Select a company...")
         await this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).last().click();
-        await this.page.waitForTimeout(500);
+        await this.waitHelper.wait(500);
         
         // Select the company from the dropdown
         const toOptions = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
             .locator('.ant-select-item-option');
         await toOptions.nth(toCompanyIndex).click();
-        await this.page.waitForTimeout(500);
+        await this.waitHelper.wait(500);
 
         console.log('   ✅ Trip added successfully');
     }

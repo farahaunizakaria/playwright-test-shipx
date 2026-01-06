@@ -1,53 +1,60 @@
 import { Page, expect } from "@playwright/test";
 import { LegData, JobData, TripData, BookingTrackingState } from "../data/TrackingData";
+import { DropdownHelper, WaitHelper, ModalHelper } from '../helper';
 import { BasePage } from "./BasePage";
 
 export class TrackingPageCodegen extends BasePage {
     state: BookingTrackingState = { bookingId: '' };
+    private dropdownHelper: DropdownHelper;
+    private waitHelper: WaitHelper;
+    private modalHelper: ModalHelper;
 
     constructor(page: Page) {
         super(page);
+        this.dropdownHelper = new DropdownHelper(page);
+        this.waitHelper = new WaitHelper(page);
+        this.modalHelper = new ModalHelper(page);
     }
 
-    /**
-     * HELPER to select dropdown option from VISIBLE dropdown only
-     * Uses Playwright locator with hasText filter for accurate matching
-     */
-    private async selectDropdownOption(value: string, waitTime: number = 600) {
-        // Wait for dropdown options to load
-        await this.page.waitForTimeout(waitTime);
+    // /**
+    //  * HELPER to select dropdown option from VISIBLE dropdown only
+    //  * Uses Playwright locator with hasText filter for accurate matching
+    //  */
+    // private async selectDropdownOption(value: string, waitTime: number = 600) {
+    //     // Wait for dropdown options to load
+    //     await this.page.waitForTimeout(waitTime);
         
-        // Find the option using Playwright locator with text matching
-        const optionLocator = this.page.locator(
-            '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option'
-        ).filter({ hasText: value }).first();
+    //     // Find the option using Playwright locator with text matching
+    //     const optionLocator = this.page.locator(
+    //         '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option'
+    //     ).filter({ hasText: value }).first();
         
-        const optionCount = await optionLocator.count();
+    //     const optionCount = await optionLocator.count();
         
-        if (optionCount === 0) {
-            // Option not found - get list of available options for error message
-            const allOptions = await this.page.locator(
-                '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option'
-            ).allTextContents();
+    //     if (optionCount === 0) {
+    //         // Option not found - get list of available options for error message
+    //         const allOptions = await this.page.locator(
+    //             '.ant-select-dropdown:not(.ant-select-dropdown-hidden) .ant-select-item-option'
+    //         ).allTextContents();
             
-            console.error(`❌ Dropdown selection failed:`);
-            console.error(`   Searched for: "${value}"`);
-            console.error(`   Found ${allOptions.length} options:`, allOptions);
-            throw new Error(`Option "${value}" not found. Available: ${allOptions.join(', ') || 'none'}`);
-        }
+    //         console.error(`❌ Dropdown selection failed:`);
+    //         console.error(`   Searched for: "${value}"`);
+    //         console.error(`   Found ${allOptions.length} options:`, allOptions);
+    //         throw new Error(`Option "${value}" not found. Available: ${allOptions.join(', ') || 'none'}`);
+    //     }
         
-        // Get the actual text of the matched option
-        const optionText = await optionLocator.textContent();
-        console.log(`✅ Found and clicking option: ${optionText}`);
+    //     // Get the actual text of the matched option
+    //     const optionText = await optionLocator.textContent();
+    //     console.log(`✅ Found and clicking option: ${optionText}`);
         
-        // Click the option
-        await optionLocator.click();
+    //     // Click the option
+    //     await optionLocator.click();
         
-        console.log(`✅ Selected: ${optionText}`);
+    //     console.log(`✅ Selected: ${optionText}`);
         
-        // Wait for dropdown to close and value to be registered
-        await this.page.waitForTimeout(600);
-    }
+    //     // Wait for dropdown to close and value to be registered
+    //     await this.page.waitForTimeout(600);
+    // }
 
     /**
      * Navigate to existing booking by ID
@@ -55,7 +62,7 @@ export class TrackingPageCodegen extends BasePage {
     async navigateToBooking(bookingId: string) {
         this.state.bookingId = bookingId;
         await this.page.goto(`/bookings/${bookingId}`);
-        await this.page.waitForLoadState('domcontentloaded');
+        await this.waitHelper.waitForPageLoad('domcontentloaded');
         console.log(`📍 Navigated to booking: ${bookingId}`);
     }
 
@@ -73,14 +80,14 @@ export class TrackingPageCodegen extends BasePage {
             await acceptButton.waitFor({ state: 'visible', timeout: 5000 });
             console.log('✅ Accept button found, clicking...');
             await acceptButton.click();
-            await this.page.waitForTimeout(500);
+            await this.waitHelper.wait(500);
             
             // Confirm with Yes button
             const yesButton = this.page.getByRole('button', { name: 'Yes' });
             await yesButton.waitFor({ state: 'visible', timeout: 3000 });
             console.log('✅ Yes button found, clicking...');
             await yesButton.click();
-            await this.page.waitForTimeout(1000);
+            await this.waitHelper.wait(1000);
             console.log('✅ Booking accepted successfully');
         } catch (error) {
             console.log('⚠️ Accept button not found - booking may already be accepted or acceptance not required');
@@ -96,14 +103,14 @@ export class TrackingPageCodegen extends BasePage {
         
         // Reload and stabilize page first
         await this.page.reload();
-        await this.page.waitForLoadState('networkidle');
-        await this.page.waitForTimeout(2000);
+        await this.waitHelper.waitForPageLoad('networkidle');
+        await this.waitHelper.wait(2000);
         console.log('✅ Page reloaded and stable');
         
         // Find sync button using icon selector
         const syncButton = this.page.locator('button:has(span.anticon-sync)').first();
         await syncButton.waitFor({ state: 'visible', timeout: 10000 });
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
         
         // Retry clicking with force if needed
         for (let i = 0; i < 3; i++) {
@@ -117,11 +124,11 @@ export class TrackingPageCodegen extends BasePage {
                     throw new Error('Sync button could not be clicked after 3 attempts');
                 }
                 console.log(`⚠️ Sync click attempt ${i + 1} failed, retrying...`);
-                await this.page.waitForTimeout(1000);
+                await this.waitHelper.wait(1000);
             }
         }
         
-        await this.page.waitForTimeout(3000);
+        await this.waitHelper.wait(3000);
         console.log('⏳ Waiting for sync to complete...');
     }
 
@@ -136,7 +143,7 @@ export class TrackingPageCodegen extends BasePage {
         try {
             await pendingStatus.waitFor({ state: 'visible', timeout: 20000 });
             console.log('✅ PENDING status found - leg is ready!');
-            await this.page.waitForTimeout(1000);
+            await this.waitHelper.wait(1000);
         } catch (e) {
             console.log('❌ PENDING status not found after sync!');
             await this.page.screenshot({ path: 'pending-status-not-found.png', fullPage: true });
@@ -158,7 +165,7 @@ export class TrackingPageCodegen extends BasePage {
         const pendingStatus = this.page.locator('table').getByText('PENDING', { exact: false });
         await pendingStatus.waitFor({ state: 'visible', timeout: 15000 });
         console.log('✅ Leg status changed to PENDING');
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
     }
 
     /**
@@ -174,7 +181,7 @@ export class TrackingPageCodegen extends BasePage {
         const syncButton = this.page.getByRole('button', { name: 'sync' });
         if (await syncButton.count() > 0) {
             await syncButton.click();
-            await this.page.waitForTimeout(2000);
+            await this.waitHelper.wait(2000);
         }
         
         // Wait for leg status to be ready (PENDING instead of DELETED)
@@ -184,12 +191,12 @@ export class TrackingPageCodegen extends BasePage {
         console.log('  • Clicking first leg in table...');
         //await this.page.locator('table').getByRole('button').first().click();
         await this.page.locator('#job-trip-legs-row-0 button[type="link"]').first().click();
-        await this.page.waitForTimeout(2000);
+        await this.waitHelper.wait(2000);
         
         // Wait for modal to appear
-        await this.page.locator('.ant-modal-wrap').first().waitFor({ state: 'visible', timeout: 5000 });
+        await this.modalHelper.waitForModal('.ant-modal-wrap');
         console.log(`✅ Leg modal opened`);
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
     }
 
     /**
@@ -206,12 +213,12 @@ export class TrackingPageCodegen extends BasePage {
             
             //await modal.locator('#driver-leg-form-selector').click();
             await modal.locator('#driverUuid').click();
-            await this.page.waitForTimeout(300);
-            await this.selectDropdownOption(legData.driver);
+            await this.waitHelper.wait(300);
+            await this.dropdownHelper.selectDropdownOption(legData.driver);
             console.log(`Driver assignment complete`);
         }
 
-        await this.page.waitForTimeout(500);
+        await this.waitHelper.wait(500);
 
         // Assign Vehicle
         if (legData.vehicle) {
@@ -219,8 +226,8 @@ export class TrackingPageCodegen extends BasePage {
             
             await modal.locator('#vehicleUuid').click();
             //await modal.locator('#vehicle-leg-form-selector').click();
-            await this.page.waitForTimeout(300);
-            await this.selectDropdownOption(legData.vehicle);
+            await this.waitHelper.wait(300);
+            await this.dropdownHelper.selectDropdownOption(legData.vehicle);
             console.log(`Vehicle assignment complete`);
         }
 
@@ -243,23 +250,23 @@ export class TrackingPageCodegen extends BasePage {
             
             if (submitVisible) {
                 await submitButton.click({ force: true });
-                await this.page.waitForTimeout(1000);
+                await this.waitHelper.wait(1000);
                 return;
             }
             
             // Click edit button to enter edit mode
             await editButton.scrollIntoViewIfNeeded().catch(() => {});
             await editButton.click({ force: true });
-            await this.page.waitForTimeout(200);
+            await this.waitHelper.wait(200);
             await editButton.click({ force: true });
-            await this.page.waitForTimeout(200);
+            await this.waitHelper.wait(200);
             await editButton.click({ force: true });
-            await this.page.waitForTimeout(1000);
+            await this.waitHelper.wait(1000);
             
             // Click submit
             await submitButton.scrollIntoViewIfNeeded().catch(() => {});
             await submitButton.click({ force: true });
-            await this.page.waitForTimeout(1000);
+            await this.waitHelper.wait(1000);
         };
 
         // Update fields in timeline order
@@ -270,7 +277,7 @@ export class TrackingPageCodegen extends BasePage {
         if (timelineData.end) await updateTimeField('end');
         if (timelineData.endOut) await updateTimeField('endOut');
         
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
     }
 
     /**
@@ -283,7 +290,7 @@ export class TrackingPageCodegen extends BasePage {
         const submitButton = modal.locator('#edit-leg-form-submit-button');
         await submitButton.waitFor({ state: 'visible', timeout: 5000 });
         await submitButton.click();
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
         console.log('✅ Driver/Vehicle submitted');
     }
 
@@ -291,18 +298,7 @@ export class TrackingPageCodegen extends BasePage {
      * Sync a modal by clicking its sync button (uses icon selector)
      */
     async syncModal(modalLocator: ReturnType<Page['locator']>, description: string = 'modal'): Promise<boolean> {
-        const syncButton = modalLocator.locator('button:has(span.anticon-sync)');
-        const isVisible = await syncButton.isVisible({ timeout: 2000 }).catch(() => false);
-        
-        if (isVisible) {
-            await syncButton.click({ force: true });
-            await this.page.waitForTimeout(2000);
-            console.log(`✅ ${description} synced`);
-            return true;
-        }
-        
-        console.log(`⚠️ Sync button not found in ${description}`);
-        return false;
+        return await this.modalHelper.syncModal(modalLocator, description);
     }
 
     /**
@@ -312,7 +308,7 @@ export class TrackingPageCodegen extends BasePage {
         const firstLegButton = this.page.locator('table').getByRole('button').first();
         await firstLegButton.waitFor({ state: 'visible', timeout: 5000 });
         await firstLegButton.click();
-        await this.page.waitForTimeout(1500);
+        await this.waitHelper.wait(1500);
         
         const tripModal = this.page.locator('.ant-modal-wrap').filter({ hasText: 'Trip (' });
         await tripModal.waitFor({ state: 'visible', timeout: 5000 });
@@ -327,9 +323,9 @@ export class TrackingPageCodegen extends BasePage {
     async openUpdateLegModal(tripModal: ReturnType<Page['locator']>) {
         const legButton = tripModal.locator('table').getByRole('button').first();
         await legButton.waitFor({ state: 'visible', timeout: 5000 });
-        await this.page.waitForTimeout(1000);
+        await this.waitHelper.wait(1000);
         await legButton.click({ force: true });
-        await this.page.waitForTimeout(1500);
+        await this.waitHelper.wait(1500);
         
         const updateLegModal = this.page.locator('.ant-modal-wrap').filter({ hasText: 'Update Leg' });
         await updateLegModal.waitFor({ state: 'visible', timeout: 5000 });
@@ -342,12 +338,7 @@ export class TrackingPageCodegen extends BasePage {
      * Close Update Leg modal (keeps Trip modal open)
      */
     async closeUpdateLegModal() {
-        console.log('🚪 Closing Update Leg modal...');
-        const closeButton = this.page.getByLabel('Update Leg').getByRole('button', { name: 'Close', exact: true });
-        await closeButton.waitFor({ state: 'visible', timeout: 5000 });
-        await closeButton.click();
-        await this.page.waitForTimeout(1000);
-        console.log('✅ Update Leg modal closed');
+        await this.modalHelper.closeModal('Update Leg');
     }
 
     /**
@@ -359,7 +350,7 @@ export class TrackingPageCodegen extends BasePage {
         const closeButton = this.page.getByLabel('Update Leg').getByRole('button', { name: 'Close', exact: true }).first();
         await closeButton.waitFor({ state: 'visible', timeout: 5000 });
         await closeButton.click();
-        await this.page.waitForTimeout(300);
+        await this.waitHelper.wait(300);
         console.log('✅ Leg dialog closed');
     }
 }
