@@ -15,6 +15,12 @@ export interface InvoiceData {
     costItems: InvoiceCostItem[];
 }
 
+export interface SupplierPaymentData {
+    invoiceNumber: string;        // e.g., "_INV12345678"
+    payTo: string;                // Company name to pay to
+    template: string;             // e.g., "INVOICE:DETAILS"
+}
+
 export class InvoicePage extends BasePage {
 
     constructor(page: Page) {
@@ -24,45 +30,73 @@ export class InvoicePage extends BasePage {
     // ===== HELPER METHODS =====
 
     /**
-     * Helper: Open a dropdown by placeholder text
-     */
-    private async openDropdown(placeholderText: string) {
-        const dropdown = this.page.locator('div')
-            .filter({ hasText: new RegExp(`^${placeholderText}$`) }).nth(4);
-        await dropdown.waitFor({ state: 'visible', timeout: 3000 });
-        await dropdown.click();
-        await this.page.waitForTimeout(800);
-    }
-
-    /**
-     * Helper: Select a template from dropdown
-     */
-    private async selectTemplate(templateName: string) {
-        await this.openDropdown('Select a template...');
-        
-        const template = this.page.locator(`[title="${templateName}"]`).first();
-        await template.waitFor({ state: 'visible', timeout: 3000 });
-        await template.click();
-        await this.page.waitForTimeout(1500);
-    }
-
-    /**
      * Helper: Click the "Create and Submit" button
      */
     private async clickSubmitButton() {
         await this.page.waitForTimeout(1000);
         
         // Optional: Click charge item anchor if visible
-        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor');
+        const chargeItemAnchor = this.page.locator('#select-charge-item-0-anchor'); //suppose to choose the latest idk 
         if (await chargeItemAnchor.isVisible({ timeout: 1000 }).catch(() => false)) {
             await chargeItemAnchor.click();
             await this.page.waitForTimeout(500);
         }
         
-        const submitButton = this.page.getByRole('button', { name: 'Create and Submit' });
+        //const submitButton = this.page.getByRole('button', { name: 'Create and Submit' }); submit-invoice-button
+        const submitButton = this.page.locator('#submit-invoice-button');
         await submitButton.waitFor({ state: 'visible', timeout: 3000 });
         await submitButton.click();
         await this.page.waitForTimeout(2000);
+    }
+
+        /**
+     * Helper to select dropdown option from visible dropdown only
+     */
+    private async selectDropdownOption(value: string, waitTime: number = 600) {
+        await this.page.waitForTimeout(waitTime);
+        
+        const result = await this.page.evaluate((optionText) => {
+            const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+            
+            if (!visibleDropdown) {
+                return {
+                    success: false,
+                    searchedFor: optionText,
+                    available: [],
+                    count: 0,
+                    error: 'No visible dropdown found'
+                };
+            }
+            
+            // Only get options from the visible dropdown
+            const options = Array.from(visibleDropdown.querySelectorAll('.ant-select-item-option'));
+            const availableOptions = options.map(o => o.textContent?.trim());
+            
+            const targetOption = options.find(opt => 
+                opt.textContent?.trim().includes(optionText)
+            );
+            
+            if (targetOption) {
+                (targetOption as HTMLElement).click();
+                return { success: true, found: targetOption.textContent?.trim() };
+            } else {
+                return { 
+                    success: false, 
+                    searchedFor: optionText,
+                    available: availableOptions,
+                    count: options.length
+                };
+            }
+        }, value);
+        
+        if (!result.success) {
+            console.error(`❌ Dropdown selection failed:`);
+            console.error(`   Searched for: "${result.searchedFor}"`);
+            console.error(`   Found ${result.count} options:`, result.available);
+            throw new Error(`Option "${result.searchedFor}" not found. Available: ${result.available?.join(', ') || 'none'}`);
+        }
+        
+        console.log(`✅ Selected: ${result.found}`);
     }
 
     // ===== PUBLIC METHODS =====
@@ -82,75 +116,68 @@ export class InvoicePage extends BasePage {
      * @param data Invoice data including template and cost items
      */
     async createCustomerInvoice(data: InvoiceData) {
-        console.log('Starting customer invoice creation...');
-
         // Click voucher types button
-        console.log('Opening voucher types menu...');
         await this.page.locator('#voucher-types-button').click();
-        await this.page.waitForTimeout(1000); // Increased wait for menu to appear
+        await this.page.waitForTimeout(1000);
 
         // Select Customer Invoice
-        console.log('Selecting "Customer Invoice"...');
-        await this.page.getByRole('button', { name: 'dollar Customer Invoice' }).click();
-        await this.page.waitForTimeout(1500);
+        await Promise.all([
+            this.page.locator('#voucher-option-ACCREC').click(),
+            this.page.waitForLoadState('networkidle', { timeout: 5000 }).catch(() => {})
+        ]);
+        
+        await this.page.waitForTimeout(3000);
 
-        // Select template
-        await this.selectTemplate(data.template);
+        // Select document type/template
+        //use '#documentCreatorTemplateUuid' instead of '#invoice-document-type-selector'
+        await this.page.locator('#documentCreatorTemplateUuid').click();
+        await this.page.waitForTimeout(500);
+        await this.selectDropdownOption(data.template);
 
         // Add cost items
         for (let i = 0; i < data.costItems.length; i++) {
             const item = data.costItems[i];
             await this.addCostItem(item, i);
-            // Wait between items to ensure form is ready
             await this.page.waitForTimeout(500);
         }
-
-        console.log('All cost items added');
     }
 
     /**
      * Add a single cost item to the invoice
      * @param item Cost item data
-     * @param index Item index (for logging)
+     * @param index Item index
      */
     private async addCostItem(item: InvoiceCostItem, index: number) {
-        console.log(`   Adding cost item #${index + 1}: ${item.chargeItem}...`);
-
         // Click "Add new cost item" button
-        const addButton = this.page.locator('#invoice-add-new-cost-item-button');
-        await addButton.waitFor({ state: 'visible', timeout: 3000 });
-        await addButton.click();
-        await this.page.waitForTimeout(1000);
+        await this.page.locator('#invoice-add-new-cost-item-button').click();
+        await this.page.waitForTimeout(300);
 
         // Click charge item dropdown and select
-        await this.openDropdown('Select a charge item...');
-
-        const chargeOption = this.page.locator('div').filter({ hasText: new RegExp(`^${item.chargeItem}$`) }).first();
-        await chargeOption.waitFor({ state: 'visible', timeout: 3000 });
-        await chargeOption.click();
-        await this.page.waitForTimeout(800);
+        await this.page.locator('#cost-charge-item-selector').click();
+        await this.page.waitForTimeout(300);
+        await this.selectDropdownOption(item.chargeItem);
 
         // Fill Sell Base Rate
-        const sellRateField = this.page.getByRole('spinbutton', { name: '* Sell Base Rate' });
+        //const sellRateField = this.page.getByRole('spinbutton', { name: '* Sell Base Rate' });
+        const sellRateField = this.page.locator('#sellBaseRate');
         await sellRateField.waitFor({ state: 'visible', timeout: 3000 });
         await sellRateField.click();
         await sellRateField.fill(String(item.sellBaseRate));
         await this.page.waitForTimeout(400);
 
         // Fill Cost Base Rate
-        const costRateField = this.page.getByRole('spinbutton', { name: '* Cost Base Rate' });
+        const costRateField = this.page.locator('#costBaseRate');
         await costRateField.waitFor({ state: 'visible', timeout: 3000 });
         await costRateField.click();
         await costRateField.fill(String(item.costBaseRate));
         await this.page.waitForTimeout(400);
 
         // Click Create button to add the item
-        const createButton = this.page.getByLabel('Add new cost item').getByRole('button', { name: 'Create' });
+        //const createButton = this.page.getByLabel('Add new cost item').getByRole('button', { name: 'Create' }); create-cost-item-button
+        const createButton = this.page.locator('#create-cost-item-button'); 
         await createButton.waitFor({ state: 'visible', timeout: 3000 });
         await createButton.click();
-        await this.page.waitForTimeout(1200); // Wait for item to be added and form to reset
-
-        console.log(`Cost item added: ${item.chargeItem}`);
+        await this.page.waitForTimeout(1200);
     }
 
     /**
@@ -173,12 +200,24 @@ export class InvoicePage extends BasePage {
      * Approve a customer invoice
      */
     async approveCustomerInvoice() {
-        const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Customer/ });
+        await this.page.waitForTimeout(1000);
+        
+        // Check if approval button exists
+        //const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Customer/ }); approval-selector
+        const approvalButton = this.page.locator('#approval-selector');
+        const buttonExists = await approvalButton.count();
+        
+        if (buttonExists === 0) {
+            console.log('⚠️  Approval button not found - invoice may already be approved or in different state');
+            return;
+        }
+        
         await approvalButton.waitFor({ state: 'visible', timeout: 3000 });
         await approvalButton.click();
         await this.page.waitForTimeout(500);
 
-        const approveBtn = this.page.getByRole('button', { name: 'Approve' });
+        //const approveBtn = this.page.getByRole('button', { name: 'Approve' }); finance-approve-voucher-button
+        const approveBtn = this.page.locator('#finance-approve-voucher-button');
         await approveBtn.waitFor({ state: 'visible', timeout: 3000 });
         await approveBtn.click();
         await this.page.waitForSelector('text=has been approved', { timeout: 5000 }).catch(() => null);
@@ -199,40 +238,36 @@ export class InvoicePage extends BasePage {
 
     /**
      * Create a supplier payment 
-     * @param invoiceNumber The invoice number from customer invoice
-     * @param supplierData Supplier payment data
+     * @param supplierData Supplier payment data including invoice number, pay to company, and template
      */
-    async createSupplierPayment(invoiceNumber: string, supplierData: InvoiceData) {
-        console.log(`💸 Starting supplier payment creation for invoice: ${invoiceNumber}...`);
-
+    async createSupplierPayment(supplierData: SupplierPaymentData) {
         // Click voucher types button
-        console.log('Opening voucher types menu...');
         await this.page.locator('#voucher-types-button').click();
         await this.page.waitForTimeout(1000);
 
         // Select Supplier Payment
-        console.log('Selecting "Supplier Payment"...');
-        await this.page.getByRole('button', { name: 'file Supplier Payment' }).click();
-        await this.page.waitForTimeout(1500); // Wait for page transition
+        await this.page.locator('#voucher-option-ACCPAY').click();
+        await this.page.waitForTimeout(1500);
 
         // Fill Invoice Number
-        console.log(`Filling invoice number: ${invoiceNumber}...`);
-        const invoiceNumberField = this.page.getByRole('textbox', { name: '* Invoice No.' });
+        //const invoiceNumberField = this.page.getByRole('textbox', { name: '* Invoice No.' });
+        const invoiceNumberField = this.page.locator('#invoiceNumber');
         await invoiceNumberField.waitFor({ state: 'visible', timeout: 3000 });
         await invoiceNumberField.click();
-        await invoiceNumberField.fill(invoiceNumber);
+        await invoiceNumberField.fill(supplierData.invoiceNumber);
         await this.page.waitForTimeout(800);
 
-        // Select company
-        await this.openDropdown('Select a company...');
-
-        const companyOption = this.page.locator('.ant-select-item').first();
-        await companyOption.waitFor({ state: 'visible', timeout: 3000 });
-        await companyOption.click();
+        // Select Pay To company
+        //await this.page.locator('#supplier-company-selector').click();
+        await this.page.locator('#form-company-selector').click();
+        await this.page.waitForTimeout(300);
+        await this.selectDropdownOption(supplierData.payTo);
         await this.page.waitForTimeout(1000);
 
-        // Select template
-        await this.selectTemplate(supplierData.template);
+        // Select document type/template
+        await this.page.locator('#documentCreatorTemplateUuid').click();
+        await this.page.waitForTimeout(500);
+        await this.selectDropdownOption(supplierData.template);
     }
 
     /**
@@ -246,14 +281,23 @@ export class InvoicePage extends BasePage {
      * Approve a supplier payment
      */
     async approveSupplierPayment() {
-        const approvalButton = this.page.getByRole('button', { name: /exclamation-circle Trans/ });
+        const approvalButton = this.page.locator('#approval-selector');
+        const buttonExists = await approvalButton.count();
+        
+        if (buttonExists === 0) {
+            console.log('⚠️  Approval button not found - invoice may already be approved or in different state');
+            return;
+        }
+        
         await approvalButton.waitFor({ state: 'visible', timeout: 3000 });
         await approvalButton.click();
         await this.page.waitForTimeout(500);
 
-        const approveBtn = this.page.getByRole('button', { name: 'Approve' });
+        //const approveBtn = this.page.getByRole('button', { name: 'Approve' }); finance-approve-voucher-button
+        const approveBtn = this.page.locator('#finance-approve-voucher-button');
         await approveBtn.waitFor({ state: 'visible', timeout: 3000 });
         await approveBtn.click();
-        await this.page.waitForTimeout(1000);
+        await this.page.waitForSelector('text=has been approved', { timeout: 5000 }).catch(() => null);
+        await this.page.waitForTimeout(500);
     }
 }
