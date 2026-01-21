@@ -1,315 +1,527 @@
-import { Page } from "@playwright/test";
-import { BookingData } from "../data/BookingData";
-import { DropdownHelper, WaitHelper, ModalHelper } from '../helper';
+// import { Page } from "@playwright/test";
+// import { BookingData, JobBookingData } from "../data/BookingData";
+// import { DropdownHelper, WaitHelper, ModalHelper, DateTimeHelper, MultipleOptionsHelper } from '../helper';
 
-/**
- * BookingPageCodegen - Page Object Model based on actual Playwright Codegen
- */
+// /**
+//  * BookingPageCodegen - Page Object Model based on actual Playwright Codegen
+//  */
 
-export class BookingPageCodegen {
-    readonly page: Page;
-    private dropdownHelper: DropdownHelper;
-    private waitHelper: WaitHelper;
-    private modalHelper: ModalHelper;
+// export class BookingPageCodegen {
+//     readonly page: Page;
+//     private dropdownHelper: DropdownHelper;
+//     private waitHelper: WaitHelper;
+//     private modalHelper: ModalHelper;
+//     private dateTimeHelper: DateTimeHelper;
+//     private multipleOptionsHelper: MultipleOptionsHelper;
 
-    //base page playwright ui elements and methods
-    constructor(page: Page) {
-        this.page = page;
-        this.dropdownHelper = new DropdownHelper(page);
-        this.waitHelper = new WaitHelper(page);
-        this.modalHelper = new ModalHelper(page);
-    }
+//     //base page playwright ui elements and methods
+//     constructor(page: Page) {
+//         this.page = page;
+//         this.dropdownHelper = new DropdownHelper(page);
+//         this.waitHelper = new WaitHelper(page);
+//         this.modalHelper = new ModalHelper(page);
+//         this.dateTimeHelper = new DateTimeHelper(page);
+//         this.multipleOptionsHelper = new MultipleOptionsHelper(page);
+//     }
 
-    /**
-     * Helper to select dropdown option from visible dropdown only
-     */
-    // private async selectDropdownOption(value: string, waitTime: number = 600) {
-    //     await this.page.waitForTimeout(waitTime);
+//     /**
+//      * Create a new booking
+//      */
+//     async createBooking(data: BookingData, jobData: JobBookingData) {
+//         console.log('📋 Starting booking creation...');
         
-    //     const result = await this.page.evaluate((optionText) => {
-    //         const visibleDropdown = document.querySelector('.ant-select-dropdown:not(.ant-select-dropdown-hidden)');
+//         // Ensure page is ready before starting
+//         await this.page.waitForLoadState('domcontentloaded');
+//         await this.waitHelper.wait(500);
+        
+//         console.log('1️⃣ Clicking "New Booking"...');
+//         const newBookingButton = this.page.getByRole('link', { name: 'plus New Booking' });
+//         await newBookingButton.waitFor({ state: 'visible', timeout: 10000 });
+//         await newBookingButton.click();
+//         await this.waitHelper.waitForPageLoad('domcontentloaded');
+        
+//         // Wait for booking form to be fully loaded
+//         await this.page.locator('#billing-customer-selector').waitFor({ state: 'visible', timeout: 10000 });
+        
+//         // Reset any open UI elements from previous interactions
+//         await this.page.keyboard.press('Escape');
+//         await this.waitHelper.wait(300);
+        
+//         // ========== BOOKING DETAILS ==========
+//         console.log('2️⃣ Booking Details');
+        
+//         // Billing Customer
+//         console.log('   - Billing Customer...');
+//         await this.page.locator('#billing-customer-selector').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(data.billingCustomer);
+        
+//         // Booking Type
+//         console.log('   - Booking Type...');
+//         await this.page.locator('#form-bookingTypes-selector').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(data.bookingType);
+        
+//         // deliveryHour
+//         console.log('   - Delivery Hour...');
+//         await this.page.locator('[id="details.deliveryHour"]').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(data.deliveryHour);
+        
+//         // Customer Ref
+//         console.log('   - Customer Ref...');
+//         await this.page.locator('[id="details.customerRef"]').click();
+//         await this.page.locator('[id="details.customerRef"]').fill(data.customerRef);
+
+//     //   forwardingAgent: 'Another Base Company',
+//         console.log('   - Forwarding Agent...');
+//         await this.page.locator('[id="details.forwardingAgent"]').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(data.forwardingAgent);
+
+//     //   shippingAgent: 'Another Base Company Testing',
+//         console.log('   - Shipping Agent...');
+//         await this.page.locator('[id="details\\.shippingAgent"]').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(data.shippingAgent);
+
+//     //   shippingRefNo: `Farah Z-${timestamp}`,
+//         console.log('   - Shipping Ref No...');
+//         await this.page.locator('[id="details\\.shippingRefNo"]').click();
+//         await this.page.locator('[id="details\\.shippingRefNo"]').fill(data.shippingRefNo);
+
+//     //   vesselName: '', 
+//         console.log('   - Vessel Name...');
+//         await this.page.locator('[id="details.vesselName"]').click();
+//         await this.page.locator('[id="details.vesselName"]').fill(data.vesselName);
+
+//     //   operatorCode: '',
+//         console.log('   - Operator Code...');
+//         await this.page.locator('[id="details.operatorCode"]').click();
+//         await this.page.locator('[id="details.operatorCode"]').fill(data.operatorCode);
+
+//     //   voyageNo: '', 
+//         console.log('   - Voyage No...');
+//         await this.page.locator('[id="details.voyageNo"]').click();
+//         await this.page.locator('[id="details.voyageNo"]').fill(data.voyageNo);
+
+//     //   eta: new Date(), //date and time selection (select at date of booking creation, but make time 23:59)
+//         await this.dateTimeHelper.selectEta(data.eta);
+    
+//     //   storageDate: new Date(), //date and time selection (select at date of booking creation, but make time 08:00)
+//         await this.dateTimeHelper.selectStorageDate(data.storageDate);
+    
+//     //   cmo: new Date(), //date and time selection (select at date of booking creation, but make time 15:00)
+//         await this.dateTimeHelper.selectCmoDate(data.cmo);    
+        
+//     //   commodity: 'General Cargo', //text    
+//         console.log('   - Commodity...');
+//         await this.page.locator('[id="details.commodity"]').click();
+//         await this.page.locator('[id="details.commodity"]').fill(data.commodity);
+
+//     //   dischargePort: 'JOHOR', //text
+//         console.log('   - Discharge Port...');
+//         await this.page.locator('[id="details.dischargePort"]').click();
+//         await this.page.locator('[id="details.dischargePort"]').fill(data.dischargePort);
+
+//     //   options: ['directDelivery', 'customSeal'] // multiple select
+//         if (data.options && data.options.length > 0) {
+//             console.log('   - Options...');
+//             await this.multipleOptionsHelper.selectMultipleOptions('details.options', data.options);
+//         }
+
+//     //   remarks: `Automated Testing ${new Date().toISOString()}`,
+//         console.log('   - Remarks...');
+//         await this.page.getByRole('textbox', { name: 'Remarks :' }).click();
+//         await this.page.getByRole('textbox', { name: 'Remarks :' }).fill(data.remarks);
+
+//     //   estimatedRfcDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000), //date and time selection (select the date booking the next day after the booking created, and make it the same time as booking time)
+//         await this.dateTimeHelper.selectEstimatedRfcDate(data.estimatedRfcDate);    
+
+//     //   lastPortStorageDate: new Date(new Date().getTime() + 24 * 60 * 60 * 1000), //date and time selection (select the date booking the next day after the booking created, and make time 00:00)
+//         await this.dateTimeHelper.selectLastPortStorageDate(data.lastPortStorageDate);    
+        
+//     //   rfcRemarks: `Automated Testing ${new Date().toISOString()}`,
+//         console.log('   - RFC Remarks...');
+//         await this.page.locator('[id="details.rfcRemarks"]').click();
+//         await this.page.locator('[id="details.rfcRemarks"]').fill(data.rfcRemarks);
+
+//     //   collectionHours: '24 HOURS', //dropdown
+//         console.log('   - Collection Hours...');
+//         await this.page.locator('[id="details\\.collectionHours"]').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(data.collectionHours);
+
+//     //   confirmcoc: true,
+//         console.log('   - Confirm COC...');
+//         await this.page.locator('[id="details\\.confirmCoc"]').check();
+//         await this.waitHelper.wait(300);
+
+//     //   completeness: true,
+//         console.log('   - Completeness...');
+//         await this.page.locator('[id="details\\.completeness"]').check();
+//         await this.waitHelper.wait(300);
+
+//         // Navigate to Step 2
+//         console.log('   ✅ Step 1 complete, moving to Step 2...');
+//         await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
+//         await this.waitHelper.waitForPageLoad('domcontentloaded');
+//         await this.waitHelper.wait(2000); // Wait for Step 2 to render
+        
+//         // ========== JOB DETAILS ==========
+//         console.log('3️⃣ Job Details');
+        
+//         // Job Type 
+//         await this.page.locator('#type').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(jobData.jobType);
+        
+//         // Trip Order Format
+//         console.log('   - Trip Format...')
+//         await this.page.locator('#tripFormat').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(jobData.tripOrderFormat);
+        
+//         //   containerNo: '', //text
+//         console.log('   - Container No...');
+//         await this.page.locator('#containerNo').click();
+//         await this.page.locator('#containerNo').fill(jobData.containerNo);
+        
+//         //   sealNo: '', //text
+//         console.log('   - Seal No...');
+//         await this.page.locator('#sealNo').click();
+//         await this.page.locator('#sealNo').fill(jobData.sealNo);
+        
+//         //   containerSize: '20', //dropdown
+//         console.log('   - Container Size...');
+//         await this.page.locator('#containerSize').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(jobData.containerSize);
+
+//         //   containerType: 'GP', //dropdown
+//         console.log('   - Container Type...');
+//         await this.page.locator('#containerType').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(jobData.containerType);
+        
+//         //   unit: 'km',
+//         console.log('   - Unit...');
+//         await this.page.locator('#unit').click();
+//         await this.page.locator('#unit').fill(jobData.unit);
+
+//         //   uom: 'TRIP',
+//         console.log('   - UOM...');
+//         await this.page.locator('#uom').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(jobData.uom);
+
+//         //   trailerType: 'NORMAL', //dropdown
+//         console.log('   - Trailer Type...');
+//         await this.page.locator('#trailerType').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(jobData.trailerType);
+        
+//         //   handling: 'BY DRUM', //dropdown
+//         console.log('   - Handling...');
+//         await this.page.locator('#handling').click() 
+//         await this.waitHelper.wait(600);
+//         await this.dropdownHelper.selectDropdownOption(jobData.handling);
+
+//         //   height: '200', //text
+//         console.log('   - Height...');
+//         await this.page.locator('#height').click();
+//         await this.page.locator('#height').fill(jobData.height);
+
+//         //   weight: '2000', //text
+//         console.log('   - Weight...');
+//         await this.page.locator('#weight').click();
+//         await this.page.locator('#weight').fill(jobData.weight);
+
+//         //   temperature: '45', //text
+//         console.log('   - Temperature...');
+//         await this.page.locator('#temperature').click();
+//         await this.page.locator('#temperature').fill(jobData.temperature);
+
+//         //   vesselID: '', 
+//         console.log('   - Vessel ID...');
+//         await this.page.locator('#vesselID').click();
+//         await this.page.locator('#vesselID').fill(jobData.vesselID);         
+
+//         //   reference: '', //text
+//         console.log('   - Reference...');
+//         await this.page.locator('#reference').click();
+//         await this.page.locator('#reference').fill(jobData.reference);
+
+//         //   internalRemark: `Automated Testing ${new Date().toISOString()}`,
+//         console.log('   - Internal Remark...');
+//         await this.page.locator('#internalRemark').click();
+//         await this.page.locator('#internalRemark').fill(jobData.internalRemark);
+
+//         //   customerRef: `8742-${timestamp}`,
+//         console.log('   - Customer Ref...');
+//         await this.page.locator('#customerRef').click();
+//         await this.page.locator('#customerRef').fill(jobData.customerRef);
+
+//         //   remarks: `Automated Testing ${new Date().toISOString()}`,
+//         console.log('   - Remarks...');
+//         await this.page.getByPlaceholder('Enter job remarks...').click();
+//         await this.page.getByPlaceholder('Enter job remarks...').fill(jobData.remarks);
+
+//         // From Company (Trip #1) DELIVERY
+//         console.log('   - From Company...');
+//         await this.page.locator('#trips-0-from-company-selector').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(jobData.fromCompanyDelivery);
+//         await this.waitHelper.wait(800); // Wait for address auto-fill to complete
+
+//         // To Company (Trip #1) DELIVERY
+//         console.log('   - To Company...');
+//         await this.page.locator('#trips-0-to-company-selector').click();
+//         await this.waitHelper.wait(600); // Wait for dropdown to load
+//         await this.dropdownHelper.selectDropdownOption(jobData.toCompanyDelivery);
+
+//         // From Company (Trip #1) COLLECTION
+//         console.log('   - From Company...');
+//         await this.page.locator('#trips-1-from-company-selector').click();
+//         await this.waitHelper.wait(300);
+//         await this.dropdownHelper.selectDropdownOption(jobData.fromCompanyCollection);
+//         await this.waitHelper.wait(800); // Wait for address auto-fill to complete
+
+//         // To Company (Trip #1) COLLECTION
+//         console.log('   - To Company...');
+//         await this.page.locator('#trips-1-to-company-selector').click();
+//         await this.waitHelper.wait(600); // Wait for dropdown to load
+//         await this.dropdownHelper.selectDropdownOption(jobData.toCompanyCollection);
+
+//         console.log('   - Waiting for form validation...');
+//         await this.waitHelper.wait(2000);
+        
+//         console.log('✅ BOOKING FORM COMPLETED - Ready to submit');
+//     }
+
+//     /**
+//      * Submit booking
+//      */
+//     async submitBooking() {
+//         console.log('📤 Submitting booking...');
+//         console.log('   - Clicking Next to go to Step 3...');
+        
+//         await this.waitHelper.wait(1500);
+        
+//         // Multiple buttons have the same ID, use getByRole with nth to target the correct one
+//         //await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
+//         await this.page.locator('#create-booking-stepper-button:visible').first().click()
+//         await this.waitHelper.waitForPageLoad('domcontentloaded');
+//         await this.waitHelper.wait(1000);
+        
+//         // Check "Override Duplicate Booking" checkbox
+//         console.log('   - Checking override duplicate booking...');
+//         await this.page.getByLabel('', { exact: true }).check();
+        
+//         // Submit
+//         console.log('   - Clicking Submit...');
+//         await this.page.getByRole('button', { name: 'Submit' }).click();
+        
+//         // Wait for redirect to booking detail page
+//         await this.waitHelper.waitForPageLoad('domcontentloaded');
+//         await this.waitHelper.wait(1000);
+        
+//         console.log('✅ Booking submitted successfully!');
+//     }
+
+//     /**
+//      * Extract booking ID from URL after submission
+//      */
+//     async getBookingIdFromUrl(): Promise<string> {
+//         await this.waitHelper.wait(1000);
+        
+//         const url = this.page.url();
+//         const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1];
+        
+//         if (bookingId && bookingId !== 'new') {
+//             console.log(`📋 ✅ Extracted booking ID from URL: ${bookingId}`);
+//             return bookingId;
+//         }
+        
+//         console.warn('⚠️ Could not extract booking ID from URL:', url);
+//         return '';
+//     }
+
+//     //TEST 2: TO EDIT BOOKING
+//         /**
+//      * Accept booking after submission (if it requires acceptance)
+//      * Clicks Accept button and confirms with Yes
+//      */
+//     async acceptBooking() {
+//         console.log('🔄 Attempting to accept booking...');
+        
+//         const acceptButton = this.page.getByRole('button', { name: 'Accept' });
+        
+//         try {
+//             // Wait for Accept button to be visible (up to 5 seconds)
+//             await acceptButton.waitFor({ state: 'visible', timeout: 5000 });
+//             console.log('✅ Accept button found, clicking...');
+//             await acceptButton.click();
+//             await this.waitHelper.wait(500);
             
-    //         if (!visibleDropdown) {
-    //             return {
-    //                 success: false,
-    //                 searchedFor: optionText,
-    //                 available: [],
-    //                 count: 0,
-    //                 error: 'No visible dropdown found'
-    //             };
-    //         }
-            
-    //         // Only get options from the visible dropdown
-    //         const options = Array.from(visibleDropdown.querySelectorAll('.ant-select-item-option'));
-    //         const availableOptions = options.map(o => o.textContent?.trim());
-            
-    //         const targetOption = options.find(opt => 
-    //             opt.textContent?.trim().includes(optionText)
-    //         );
-            
-    //         if (targetOption) {
-    //             (targetOption as HTMLElement).click();
-    //             return { success: true, found: targetOption.textContent?.trim() };
-    //         } else {
-    //             return { 
-    //                 success: false, 
-    //                 searchedFor: optionText,
-    //                 available: availableOptions,
-    //                 count: options.length
-    //             };
-    //         }
-    //     }, value);
-        
-    //     if (!result.success) {
-    //         console.error(`❌ Dropdown selection failed:`);
-    //         console.error(`   Searched for: "${result.searchedFor}"`);
-    //         console.error(`   Found ${result.count} options:`, result.available);
-    //         throw new Error(`Option "${result.searchedFor}" not found. Available: ${result.available?.join(', ') || 'none'}`);
-    //     }
-        
-    //     console.log(`✅ Selected: ${result.found}`);
-    // }
+//             // Confirm with Yes button
+//             const yesButton = this.page.getByRole('button', { name: 'Yes' });
+//             await yesButton.waitFor({ state: 'visible', timeout: 3000 });
+//             console.log('✅ Yes button found, clicking...');
+//             await yesButton.click();
+//             await this.waitHelper.wait(1000);
+//             console.log('✅ Booking accepted successfully');
+//         } catch (error) {
+//             console.log('⚠️ Accept button not found - booking may already be accepted or acceptance not required');
+//         }
+//     }
 
-    /**
-     * Create a new booking (Steps 1 & 2)
-     */
-    async createBooking(data: BookingData) {
-        console.log('📋 Starting booking creation...');
+//     /**
+//      * Click the Edit button to enter edit mode
+//      * Waits for the edit button to appear after booking acceptance
+//      */
+//     async clickEditButton() {
+//         console.log('✏️ Clicking Edit button...');
         
-        console.log('1️⃣ Clicking "New Booking"...');
-        await this.page.getByRole('link', { name: 'plus New Booking' }).click();
-        await this.waitHelper.waitForPageLoad('domcontentloaded');
+//         const editButton = this.page.getByRole('button', { name: 'edit Edit' });
         
-        // Reset any open UI elements from previous interactions
-        await this.page.keyboard.press('Escape');
-        await this.waitHelper.wait(300);
+//         // Wait for Edit button to appear (may take a few seconds after acceptance)
+//         await editButton.waitFor({ state: 'visible', timeout: 10000 });
+//         await editButton.click();
+//         await this.waitHelper.wait(1000);
         
-        // ========== STEP 1: BOOKING DETAILS ==========
-        console.log('2️⃣ Step 1: Booking Details');
-        
-        // Billing Customer
-        console.log('   - Billing Customer...');
-        await this.page.locator('#billing-customer-selector').click();
-        await this.waitHelper.wait(300);
-        await this.dropdownHelper.selectDropdownOption(data.billingCustomer);
-        
-        // Booking Type
-        console.log('   - Booking Type...');
-        await this.page.locator('#form-bookingTypes-selector').click();
-        await this.waitHelper.wait(300);
-        await this.dropdownHelper.selectDropdownOption(data.bookingType);
-        
-        // Department
-        console.log('   - Department...');
-        await this.page.locator('[id="details\\.departments"]').click() 
-        await this.waitHelper.wait(600);
-        await this.dropdownHelper.selectDropdownOption(data.department);
-        
-        // Shipper Ref
-        console.log('   - Shipper Ref...');
-        await this.page.locator('[id="details\\.shipperRef"]').click();
-        await this.page.locator('[id="details\\.shipperRef"]').fill(data.shipperRef);
-        
-        // Customer Ref
-        console.log('   - Customer Ref...');
-        await this.page.locator('[id="details.customerRef"]').click();
-        await this.page.locator('[id="details.customerRef"]').fill(data.customerRef);
-        
-        // Remarks
-        console.log('   - Remarks...');
-        await this.page.locator('#remarks[placeholder="Enter text"]').click();
-        await this.page.locator('#remarks[placeholder="Enter text"]').fill(data.remarks);
-        
-        // Load Type
-        console.log('   - Load Type...');
-        await this.page.locator('[id="details\\.loadType"]').click() 
-        await this.waitHelper.wait(600);
-        await this.dropdownHelper.selectDropdownOption(data.loadType);
-        
-        // Customer SO
-        console.log('   - Customer SO...');
-        await this.page.locator('[id="details.customerSo"]').click();
-        await this.page.locator('[id="details.customerSo"]').fill(data.customerSo);
-        
-        // References
-        console.log('   - References...');
-        await this.page.locator('[id="details.references"]').click();
-        await this.page.locator('[id="details.references"]').fill(data.references);
-        
-        // Quotation
-        console.log('   - Quotation...');
-        await this.page.locator('[id="details.quotation uuid"]').click() 
-        await this.waitHelper.wait(600);
-        await this.dropdownHelper.selectDropdownOption(data.quotation);
+//         // Wait for edit form to be ready
+//         await this.page.waitForLoadState('domcontentloaded');
+//         console.log('✅ Edit mode activated');
+//     }
 
-        // Navigate to Step 2
-        console.log('   ✅ Step 1 complete, moving to Step 2...');
-        await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
-        await this.waitHelper.waitForPageLoad('domcontentloaded');
-        await this.waitHelper.wait(2000); // Wait for Step 2 to render
+//     /**
+//      * Edit the delivery hour field
+//      * @param newDeliveryHour The new delivery hour value (e.g., 'OFFICE HRS', '24 HRS')
+//      */
+//     async editDeliveryHour(newDeliveryHour: string) {
+//         console.log(`📝 Editing Delivery Hour to: ${newDeliveryHour}`);
         
-        // ========== STEP 2: JOB DETAILS ==========
-        console.log('3️⃣ Step 2: Job Details');
+//         // Click the existing delivery hour field
+//         await this.page.getByText('HRS').click();
+//         await this.waitHelper.wait(500);
         
-        // Job Type - Wait for it to be actually visible before clicking
-        await this.page.locator('#type').click();
-        await this.waitHelper.wait(300);
-        await this.dropdownHelper.selectDropdownOption(data.jobType);
-        
-        // Trip Order Format
-        console.log('   - Trip Format...')
-        await this.page.locator('#tripFormat').click();
-        await this.waitHelper.wait(300);
-        await this.dropdownHelper.selectDropdownOption(data.tripFormat);
-        
-        // Unit/Measurement Unit (dynamic field based on job type)
-        console.log('   - Unit/Measurement Unit...');
-        await this.waitHelper.wait(1200);
-        
-        const measurementUnitField = this.page.locator('#measurementUnit');
-        const unitField = this.page.locator('#unit');
-        
-        try {
-            if (await measurementUnitField.isVisible({ timeout: 1000 })) {
-                await measurementUnitField.click();
-                await measurementUnitField.fill(data.unit);
-                console.log('   ✓ Measurement Unit filled');
-            } else if (await unitField.isVisible({ timeout: 1000 })) {
-                await unitField.click();
-                await unitField.fill(data.unit);
-                console.log('   ✓ Unit filled');
-            }
-        } catch (e) {
-            console.log('   ⚠ Unit field not found (may not be required for this job type)');
-        }
+//         // Select the new value from dropdown
+//         await this.dropdownHelper.selectDropdownOption(newDeliveryHour);
+//         console.log(`✅ Delivery Hour updated to: ${newDeliveryHour}`);
+//     }
 
-        // UOM
-        console.log('   - UOM...');
-        await this.page.locator('#uom').click();
-        await this.waitHelper.wait(600);
-        await this.dropdownHelper.selectDropdownOption(data.uom);
+//     /**
+//      * Submit the updated booking
+//      * Clicks the Update Booking button
+//      */
+//     async updateBooking() {
+//         console.log('💾 Updating booking...');
         
-        // From Company (Trip #1)
-        console.log('   - From Company...');
-        await this.page.locator('#trips-0-from-company-selector').click();
-        await this.waitHelper.wait(300);
-        await this.dropdownHelper.selectDropdownOption(data.fromCompany);
-        await this.waitHelper.wait(800); // Wait for address auto-fill to complete
+//         const updateButton = this.page.getByRole('button', { name: 'Update Booking' }).nth(1);
+//         await updateButton.waitFor({ state: 'visible', timeout: 5000 });
+//         await updateButton.click();
+//         await this.waitHelper.wait(2000);
         
-        // To Company (Trip #1)
-        console.log('   - To Company...');
-        await this.page.locator('#trips-0-to-company-selector').click();
-        await this.waitHelper.wait(600); // Wait for dropdown to load
-        await this.dropdownHelper.selectDropdownOption(data.toCompany);
-        
-        // Wait for form validation
-        console.log('   - Waiting for form validation...');
-        await this.waitHelper.wait(2000);
-        
-        console.log('✅ BOOKING FORM COMPLETED - Ready to submit');
-    }
+//         console.log('✅ Booking updated successfully');
+//     }
 
-    /**
-     * Submit booking (Step 3)
-     */
-    async submitBooking() {
-        console.log('📤 Submitting booking...');
-        console.log('   - Clicking Next to go to Step 3...');
+//     /**
+//      * Complete edit workflow: accept, edit delivery hour, and update
+//      * @param newDeliveryHour The new delivery hour value
+//      */
+//     async editBookingDeliveryHour(newDeliveryHour: string) {
+//         console.log('🔧 Starting booking edit workflow...');
         
-        await this.waitHelper.wait(1500);
+//         //Accept the booking
+//         await this.acceptBooking();
         
-        // Multiple buttons have the same ID, use getByRole with nth to target the correct one
-        //await this.page.getByRole('button', { name: 'Next right' }).nth(1).click();
-        await this.page.locator('#create-booking-stepper-button:visible').first().click()
-        await this.waitHelper.waitForPageLoad('domcontentloaded');
-        await this.waitHelper.wait(1000);
+//         //Click Edit button
+//         await this.clickEditButton();
         
-        // Check "Override Duplicate Booking" checkbox
-        console.log('   - Checking override duplicate booking...');
-        await this.page.getByLabel('', { exact: true }).check();
+//         //Edit the delivery hour
+//         await this.editDeliveryHour(newDeliveryHour);
         
-        // Submit
-        console.log('   - Clicking Submit...');
-        await this.page.getByRole('button', { name: 'Submit' }).click();
+//         //Update the booking
+//         await this.updateBooking();
         
-        // Wait for redirect to booking detail page
-        await this.waitHelper.waitForPageLoad('domcontentloaded');
-        await this.waitHelper.wait(1000);
-        
-        console.log('✅ Booking submitted successfully!');
-    }
+//         console.log('✅ Booking edit completed successfully');
+//     }
 
-    /**
-     * Extract booking ID from URL after submission
-     */
-    async getBookingIdFromUrl(): Promise<string> {
-        await this.waitHelper.wait(1000);
+//     //TEST 3: TO EDIT JOB IN BOOKING PAGE
+//         /**
+//      * Click the Edit Job icon to enter job edit mode
+//      * Waits for the edit icon to appear after booking acceptance
+//      */
+//     async clickEditJobIcon() {
+//         console.log('✏️ Clicking Edit Job icon...');
         
-        const url = this.page.url();
-        const bookingId = url.match(/\/bookings\/([^/?]+)/)?.[1];
+//         const editJobButton = this.page.getByRole('button', { name: 'edit', exact: true });
         
-        if (bookingId && bookingId !== 'new') {
-            console.log(`📋 ✅ Extracted booking ID from URL: ${bookingId}`);
-            return bookingId;
-        }
+//         // Wait for Edit button to appear (may take a few seconds after acceptance)
+//         await editJobButton.waitFor({ state: 'visible', timeout: 10000 });
+//         await editJobButton.click();
+//         await this.waitHelper.wait(1000);
         
-        console.warn('⚠️ Could not extract booking ID from URL:', url);
-        return '';
-    }
+//         // Wait for edit form to be ready
+//         await this.page.waitForLoadState('domcontentloaded');
+//         console.log('✅ Job edit mode activated');
+//     }
 
-    /**
-     * Add a new trip to the current job
-     * @param toCompanyIndex Index of the company to select in To Company dropdown
-     */
-    async addTrip(fromCompanyIndex: number = 0, toCompanyIndex: number = 0) {
-        console.log('➕ Adding new trip...');
-        
-        // Click the trip add button
-        await this.page.locator('#trip-add-button').click();
-        await this.waitHelper.wait(1000); // Wait for trip to be added
+//     /**
+//      * Update the container size field in job details
+//      * @param newContainerSize The new container size value (e.g., '20', '40', '45')
+//      */
+//     async updateContainerSize(newContainerSize: string) {
+//     console.log(`📝 Updating Container Size to: ${newContainerSize}`);
 
-        // Scroll to the new trip to ensure it's visible
-        await this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).last().scrollIntoViewIfNeeded();
-        await this.waitHelper.wait(300);
-        
-        // Click the To Company dropdown (last occurrence of "Select a company...")
-        await this.page.locator('div').filter({ hasText: /^Select a company\.\.\.$/ }).last().click();
-        await this.waitHelper.wait(500);
-        
-        // Select the company from the dropdown
-        const toOptions = this.page.locator('.ant-select-dropdown:not(.ant-select-dropdown-hidden)')
-            .locator('.ant-select-item-option');
-        await toOptions.nth(toCompanyIndex).click();
-        await this.waitHelper.wait(500);
+//     const modal = this.page.getByRole('dialog', { name: 'Edit Job redo' });
 
-        console.log('   ✅ Trip added successfully');
-    }
+//     // Click the displayed value "20" to open the dropdown
+//     await modal.getByText('20', { exact: true }).click();
+//     //await modal.locator('#containerSize').click();
+//     await this.waitHelper.wait(500);
+    
+//     await this.dropdownHelper.selectDropdownOption(newContainerSize);
+//     console.log(`✅ Container Size updated to: ${newContainerSize}`);
+// }
 
-    /**
-     * Fill job remarks for a specific job
-     * @param jobIndex 0-based index of the job (0 = first job, 1 = second job, etc.)
-     * @param remarks The remarks text to fill
-     */
-    async fillJobRemarks(jobIndex: number, remarks: string) {
-        console.log(`📝 Filling Job #${jobIndex + 1} remarks: "${remarks}"`);
+//     /**
+//      * Submit the updated job
+//      * Clicks the Update button
+//      */
+//     async updateJob() {
+//         console.log('💾 Updating job...');
         
-        const jobRemarksField = this.page.getByRole('textbox', { name: 'Enter job remarks...' }).nth(jobIndex);
-        await jobRemarksField.click();
-        await jobRemarksField.fill(remarks);
-    }
-
-    /**
-     * Fill trip remarks for a specific trip
-     * @param tripNumber 1-based trip number (1, 2, 3, etc.) - matches the placeholder text
-     * @param remarks The remarks text to fill
-     * @param jobIndex 0-based job index (default: 0 = first job)
-     */
-    async fillTripRemarks(tripNumber: number, remarks: string, jobIndex: number = 0) {
-        console.log(`📝 Filling Trip #${tripNumber} remarks (Job #${jobIndex + 1}): "${remarks}"`);
+//         const updateButton = this.page.getByRole('button', { name: 'Update', exact: true });
+//         await updateButton.waitFor({ state: 'visible', timeout: 5000 });
+//         await updateButton.click();
+//         await this.waitHelper.wait(2000);
         
-        const tripRemarksField = this.page.getByRole('textbox', { name: `Enter trip #${tripNumber} remarks...` }).nth(jobIndex);
-        await tripRemarksField.click();
-        await tripRemarksField.fill(remarks);
-    }
+//         console.log('✅ Job updated successfully');
+//     }
 
-}
+//     /**
+//      * Complete edit job workflow: accept booking, click edit job icon, edit container size, and update
+//      * @param newContainerSize The new container size value
+//      */
+//     async editJobDetails(newContainerSize: string) {
+//         console.log('🔧 Starting job edit workflow...');
+        
+//         //Accept the booking
+//         await this.acceptBooking();
+        
+//         // Click Edit Job icon
+//         await this.clickEditJobIcon();
+        
+//         // Update the container size
+//         await this.updateContainerSize(newContainerSize);
+        
+//         // Update the job
+//         await this.updateJob();
+        
+//         console.log('✅ Job edit completed successfully');
+//     }
+
+
+// }

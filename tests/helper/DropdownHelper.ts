@@ -1,11 +1,7 @@
 import { Page } from '@playwright/test';
 
 /**
- * DropdownHelper - Reusable methods for interacting with Ant Design dropdowns
- * 
- * This helper eliminates code duplication across page objects by providing
- * a centralized way to handle dropdown interactions.
- */
+ * DropdownHelper - Reusable methods for interacting with Ant Design dropdowns */
 export class DropdownHelper {
     private page: Page;
 
@@ -16,16 +12,9 @@ export class DropdownHelper {
     /**
      * Select an option from a visible Ant Design dropdown
      * 
-     * @param value - The text to search for in the dropdown options (partial match supported)
+     * @param value - The text to search for in the dropdown options (uses startsWith matching)
      * @param waitTime - Time to wait before attempting selection (default: 600ms)
      * @throws Error if option not found with list of available options
-     * 
-     * @example
-     * ```typescript
-     * const dropdownHelper = new DropdownHelper(page);
-     * await page.locator('#my-selector').click();
-     * await dropdownHelper.selectDropdownOption('Option 1');
-     * ```
      */
     async selectDropdownOption(value: string, waitTime: number = 600): Promise<void> {
         await this.page.waitForTimeout(waitTime);
@@ -47,8 +36,9 @@ export class DropdownHelper {
             const options = Array.from(visibleDropdown.querySelectorAll('.ant-select-item-option'));
             const availableOptions = options.map(o => o.textContent?.trim());
             
+            // Use startsWith to handle options with metadata appended
             const targetOption = options.find(opt => 
-                opt.textContent?.trim().includes(optionText)
+                opt.textContent?.trim().startsWith(optionText)
             );
             
             if (targetOption) {
@@ -138,6 +128,6 @@ export class DropdownHelper {
      */
     async optionExists(value: string): Promise<boolean> {
         const options = await this.getAvailableOptions();
-        return options.some(opt => opt.includes(value));
+        return options.some(opt => opt.startsWith(value));
     }
 }
